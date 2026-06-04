@@ -1,0 +1,517 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins', sans-serif;
+}
+
+body{
+    background-image:url("../images/bg.png");
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+}
+
+/* ================= MAIN CONTAINER ================= */
+
+.main-container{
+    width:86%;
+    margin:24px auto;
+    border:4px solid white;
+    border-radius:24px;
+    padding:24px 28px 45px;
+}
+/* ================= HEADER ================= */
+
+header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+/* ================= LOGO ================= */
+
+.logo h2{
+    font-size:21px;
+    line-height:29px;
+    font-weight:700;
+    color:#FFFFFF;
+}
+
+.logo span{
+    color:#ff944d;
+}
+
+/* ================= NAVBAR ================= */
+
+nav{
+    display:flex;
+    align-items:center;
+    gap:38px;
+    background:#fff;
+    padding:12px 22px;
+    border-radius:50px;
+}
+
+nav a{
+    text-decoration:none;
+    color:#000 !important;
+    font-size:17px;
+    font-weight:500;
+}
+
+nav a:hover{
+    color:#f7934c !important;
+}
+
+.active{
+    font-weight:700;
+}
+
+/* ================= LOGIN BUTTON ================= */
+
+.login-btn{
+
+    background:#f7934c;
+
+    border:none;
+    outline:none;
+
+    padding:12px 32px;
+
+    border-radius:35px;
+
+    font-size:18px;
+    font-weight:500;
+
+    cursor:pointer;
+}
+
+/* ================= DROPDOWN ================= */
+
+.dropdown{
+    position:relative;
+}
+
+.dropdown-content{
+
+    position:absolute;
+
+    top:62px;
+    right:0;
+
+    width:240px;
+
+    background:white;
+
+    border-radius:12px;
+
+    overflow:hidden;
+
+    display:none;
+
+    z-index:1000;
+}
+
+.dropdown-content a{
+
+    display:block;
+
+    padding:14px;
+
+    color:black;
+
+    border-bottom:1px solid #ddd;
+}
+
+.dropdown-content a:hover{
+    background:#ff944d;
+    color:white;
+}
+
+.dropdown:hover .dropdown-content{
+    display:block;
+}
+
+/* ================= HERO ================= */
+
+.hero{
+
+    text-align:center;
+    margin-top:85px;
+    color:#FFFFFF;
+}
+
+.hero h1{
+    font-size:64px;
+    line-height:82px;
+    font-weight:700;
+}
+.hero p{
+
+    width:68%;
+
+    margin:26px auto;
+
+    font-size:22px;
+
+    line-height:34px;
+
+    font-weight:300;
+}
+
+.hero-btn{
+
+    margin-top:12px;
+
+    background:#f7934c;
+
+    color:white;
+
+    border:none;
+
+    padding:18px 44px;
+
+    border-radius:40px;
+
+    font-size:28px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+    transition:0.3s;
+}
+
+.hero-btn:hover{
+    transform:scale(1.05);
+}
+
+/* ================= CATEGORIES ================= */
+
+.categories{
+    margin-top:75px;
+    color:#FFFFFF;
+}
+
+.categories h2{
+
+    font-size:44px;
+    font-weight:700;
+
+    margin-bottom:26px;
+}
+
+.cards{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:20px;
+
+    flex-wrap:nowrap;
+}
+
+/* ================= CARD ================= */
+
+.card{
+
+    width:220px;
+
+    background:white;
+
+    color:black;
+
+    border-radius:4px;
+
+    padding:14px;
+
+    text-align:center;
+}
+
+.card img{
+
+    width:100%;
+
+    height:185px;
+
+    object-fit:cover;
+}
+
+.card h3{
+
+    margin-top:14px;
+
+    font-size:18px;
+
+    font-weight:700;
+}
+
+.card p{
+
+    margin-top:10px;
+
+    font-size:15px;
+
+    line-height:23px;
+}
+
+.card a{
+
+    display:inline-block;
+
+    margin-top:10px;
+
+    text-decoration:none;
+
+    color:#0044cc;
+
+    font-size:15px;
+}
+
+/* ================= EXPLORE CARD ================= */
+
+.explore-card{
+    width:220px;
+}
+
+.explore-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:10px;
+}
+
+.explore-grid img{
+
+    width:100%;
+
+    height:78px;
+
+    object-fit:cover;
+}
+
+.explore-card h4{
+
+    margin-top:20px;
+
+    color:#0044cc;
+
+    font-size:20px;
+
+    font-weight:500;
+}
+
+/* ================= FOOTER ================= */
+
+footer{
+
+    margin-top:40px;
+
+    background:#111;
+
+    padding:45px 10%;
+
+    color:white;
+}
+
+.footer-container{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    flex-wrap:wrap;
+
+    gap:40px;
+}
+
+/* HEADINGS */
+
+.footer-box h3{
+
+    color:white !important;
+
+    font-size:26px;
+
+    margin-bottom:20px;
+
+    font-weight:700;
+}
+
+/* LINKS */
+
+.footer-box a{
+
+    display:block;
+
+    color:white !important;
+
+    text-decoration:none;
+
+    margin-bottom:12px;
+
+    font-size:18px;
+
+    transition:0.3s;
+}
+
+.footer-box a:hover{
+    color:#f7934c !important;
+}
+
+/* PARAGRAPH */
+
+.footer-box p{
+
+    color:white !important;
+
+    font-size:18px;
+}
+
+/* SOCIAL ICONS */
+
+.social-icons{
+
+    display:flex;
+
+    gap:14px;
+
+    margin-bottom:16px;
+}
+
+.social-icons img{
+
+    width:42px;
+
+    height:42px;
+
+    object-fit:contain;
+}
+
+/* COPYRIGHT */
+
+.copyright{
+
+    text-align:center;
+
+    margin-top:35px;
+
+    color:white !important;
+
+    font-size:20px;
+}
+
+/* ================= SOCIAL ICONS ================= */
+
+.social-icons{
+
+    display:flex;
+
+    gap:14px;
+
+    margin-bottom:16px;
+}
+
+.social-icons img{
+
+    width:42px;
+    height:42;
+
+    cursor:pointer;
+}
+
+/* ================= COPYRIGHT ================= */
+
+.copyright{
+
+    text-align:center;
+
+    margin-top:35px;
+
+    font-size:20px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media(max-width:1100px){
+
+    .hero h1{
+        font-size:55px;
+        line-height:75px;
+    }
+
+    .hero p{
+        width:90%;
+    }
+
+    .cards{
+        justify-content:center;
+    }
+}
+
+@media(max-width:768px){
+
+    .main-container{
+        width:95%;
+    }
+
+    header{
+        flex-direction:column;
+        gap:20px;
+    }
+
+    nav{
+
+        flex-wrap:wrap;
+
+        justify-content:center;
+
+        gap:18px;
+    }
+
+    .hero h1{
+
+        font-size:42px;
+
+        line-height:58px;
+    }
+
+    .hero p{
+
+        width:100%;
+
+        font-size:18px;
+    }
+
+    .hero-btn{
+
+        font-size:20px;
+
+        padding:14px 28px;
+    }
+
+    .categories h2{
+        text-align:center;
+    }
+
+    .cards{
+        justify-content:center;
+    }
+
+    .footer-container{
+
+        flex-direction:column;
+
+        text-align:center;
+    }
+
+    .social-icons{
+        justify-content:center;
+    }
+}
+
+

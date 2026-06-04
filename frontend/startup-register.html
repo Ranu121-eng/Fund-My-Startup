@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register As Startup</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/startup-register.css">
+
+    <!-- GOOGLE FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="light-page">
+
+<!-- ================= NAVBAR ================= -->
+
+  <nav class="navbar">
+
+     <!-- LOGO -->
+        <div class="logo">
+            <h2>FUND MY</h2>
+            <h2>START <span>UP</span></h2>
+        </div>
+
+    <div class="nav-links">
+        <a href="index.html" class="active">Home</a>
+        <a href="startup.html">Startups</a>
+        <a href="investor.html" class="active">Investors</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact us</a>
+    </div>
+
+    <!-- LOGIN DROPDOWN -->
+
+    <div class="dropdown">
+
+            <button class="login-btn">
+                Login/Register
+            </button>
+
+            <div class="dropdown-content">
+
+                <a href="startup-register.html">
+                    Register as Startup
+                </a>
+
+                <a href="investor-register.html">
+                    Register as Investor
+                </a>
+
+                <a href="login.html">
+                    Login
+                </a>
+
+            </div>
+
+    </div>
+
+  </nav>
+
+<!-- ================= PAGE HEADING ================= -->
+
+<section class="register-heading">
+
+    <h1>Register As Startup</h1>
+
+    <p>
+        Tell us about of venture to get started
+    </p>
+
+</section>
+
+<!-- ================= FORM CONTAINER ================= -->
+
+<section class="register-container">
+
+    <form id="startupForm">
+
+        <!-- PERSONAL DETAILS -->
+
+        <h2>Personal Details</h2>
+
+        <div class="grid-2">
+
+            <input type="text" placeholder="Full Name" required>
+
+            <input type="email" placeholder="Email Address" required>
+
+            <input type="text" placeholder="Contact Number" required>
+
+            <input type="password" placeholder="Password" required>
+
+        </div>
+
+        <!-- COMPANY DETAILS -->
+
+        <h2>Startup/Company Details</h2>
+
+        <div class="grid-2">
+
+            <input type="text" placeholder="Company name" required>
+
+            <input type="text" placeholder="Website URL (optional)">
+
+            <select required>
+                <option>Startup Category/Domain</option>
+                <option>Health Tech</option>
+                <option>EdTech</option>
+                <option>FinTech</option>
+                <option>AI & ML</option>
+                <option>E-Commerce</option>
+                <option>Food Tech</option>
+            </select>
+
+        </div>
+        <!-- FUNDING -->
+
+
+
+        <!-- DESCRIPTION -->
+
+        <h2>Startup Discription</h2>
+
+        <textarea placeholder="Short Description of your startup/business Idea (max:200 words)"></textarea>
+        <h2>Funding details</h2>
+
+            <div class="funding-box">
+
+                <select id="fundingrange">
+
+                    <option>Funding Required (IN RS INR)</option>
+
+                    <option>10,000 - 50,000</option>
+
+                    <option>50,000 - 2,00,000</option>
+
+                    <option>2,00,000 - 5,00,000</option>
+
+                    <option>5,00,000 - 10,00,000</option>
+
+                    <option>10,00,000 - 50,00,000</option>
+
+                    <option>50,00,000 - 1,00,00,000</option>
+
+                    <option>Above 1 Crore</option>
+
+                </select>
+
+            </div>
+
+        <!-- LOCATION SECTION -->
+
+<h2>Location</h2>
+
+<div class="grid-3">
+
+    <!-- COUNTRY -->
+
+    <select required>
+
+        <option value="">Select Country</option>
+
+        <option>India</option>
+        <option>United States</option>
+        <option>United Kingdom</option>
+        <option>Canada</option>
+        <option>Australia</option>
+        <option>Germany</option>
+        <option>France</option>
+        <option>Japan</option>
+        <option>China</option>
+        <option>Brazil</option>
+        <option>Russia</option>
+        <option>South Korea</option>
+        <option>Singapore</option>
+        <option>UAE</option>
+        <option>South Africa</option>
+        <option>New Zealand</option>
+        <option>Italy</option>
+        <option>Spain</option>
+        <option>Mexico</option>
+        <option>Indonesia</option>
+    </select>
+
+    <!-- STATE -->
+
+    <select required>
+
+        <option value="">Select State</option>
+
+        <option>Andhra Pradesh</option>
+        <option>Arunachal Pradesh</option>
+        <option>Assam</option>
+        <option>Bihar</option>
+        <option>Chhattisgarh</option>
+        <option>Goa</option>
+        <option>Gujarat</option>
+        <option>Haryana</option>
+        <option>Himachal Pradesh</option>
+        <option>Jharkhand</option>
+        <option>Karnataka</option>
+        <option>Kerala</option>
+        <option>Madhya Pradesh</option>
+        <option>Maharashtra</option>
+        <option>Manipur</option>
+        <option>Meghalaya</option>
+        <option>Mizoram</option>
+        <option>Nagaland</option>
+        <option>Odisha</option>
+        <option>Punjab</option>
+        <option>Rajasthan</option>
+        <option>Sikkim</option>
+        <option>Tamil Nadu</option>
+        <option>Telangana</option>
+        <option>Tripura</option>
+        <option>Uttar Pradesh</option>
+        <option>Uttarakhand</option>
+        <option>West Bengal</option>
+
+    </select>
+
+    <!-- DISTRICT -->
+
+    <select required>
+
+        <option value="">Select District</option>
+
+        <!-- Madhya Pradesh -->
+        <option>Bhopal</option>
+        <option>Indore</option>
+        <option>Dewas</option>
+        <option>Ujjain</option>
+        <option>Gwalior</option>
+        <option>Jabalpur</option>
+
+        <!-- Maharashtra -->
+        <option>Mumbai</option>
+        <option>Pune</option>
+        <option>Nagpur</option>
+        <option>Nashik</option>
+
+        <!-- Rajasthan -->
+        <option>Jaipur</option>
+        <option>Jodhpur</option>
+        <option>Udaipur</option>
+        <option>Kota</option>
+
+        <!-- Uttar Pradesh -->
+        <option>Lucknow</option>
+        <option>Kanpur</option>
+        <option>Agra</option>
+        <option>Varanasi</option>
+
+        <!-- Gujarat -->
+        <option>Ahmedabad</option>
+        <option>Surat</option>
+        <option>Vadodara</option>
+        <option>Rajkot</option>
+
+        <!-- Karnataka -->
+        <option>Bengaluru</option>
+        <option>Mysore</option>
+        <option>Mangalore</option>
+
+        <!-- Tamil Nadu -->
+        <option>Chennai</option>
+        <option>Coimbatore</option>
+        <option>Madurai</option>
+
+        <!-- Delhi -->
+        <option>New Delhi</option>
+
+    </select>
+
+</div>
+        <!-- DOCUMENTS -->
+
+        <h2>Identity Verification</h2>
+
+        <div class="grid-2">
+
+            <!-- AADHAAR -->
+
+<div class="upload-box">
+
+    <label for="aadhaarUpload">
+
+        Upload Aadhaar Card
+
+        <i class="fa-regular fa-file-lines"></i>
+
+    </label>
+
+              <input type="file" id="aadhaarUpload">
+
+            </div>
+
+            <div class="upload-box">
+
+    <label for="pitchUpload">
+
+        Upload Pitch Deck
+
+        <i class="fa-regular fa-file-lines"></i>
+
+    </label>
+
+    <input type="file" id="pitchUpload">
+
+</div>
+
+            <div class="upload-box">
+
+    <label for="panUpload">
+
+        Upload PAN Card
+
+        <i class="fa-regular fa-file-lines"></i>
+
+    </label>
+
+    <input type="file" id="panUpload">
+
+</div>
+
+        </div>
+
+        <!-- NOTES -->
+
+        <p class="note">
+            📄 Accepted formats: PDF/JPG
+        </p>
+
+        <p class="note">
+            🔒 Your documents are secure and shared only with verified investors
+        </p>
+
+        <!-- CHECKBOX -->
+
+        <div class="checkbox-area">
+
+            <input type="checkbox" required>
+
+            <label>
+                I agree to terms of service & privacy policy
+            </label>
+
+        </div>
+
+        <!-- BUTTON -->
+
+        <button type="submit" class="submit-btn">
+            Submit Registration
+        </button>
+
+    </form>
+
+</section>
+
+<!-- JS -->
+<script src="js/script1.js"></script>
+
+</body>
+</html>
