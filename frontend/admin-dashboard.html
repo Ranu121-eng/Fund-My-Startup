@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="css/startup-dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <h2>FUND MY <br>START <span>UP</span></h2>
+        </div>
+        <nav class="nav-links">
+            <a href="admin-dashboard.html">Dashboard</a>
+            <a href="http://127.0.0.1:8000/admin/" target="_blank">Django Admin</a>
+        </nav>
+        <button class="logout-btn" type="button">Logout</button>
+    </header>
+
+    <section class="hero">
+        <div class="hero-left">
+            <h1>Admin Dashboard</h1>
+            <p>Approve startups, investors, and manage platform data.</p>
+        </div>
+    </section>
+
+    <section class="stats-section" id="adminStats"></section>
+
+    <section class="dashboard-grid" id="pendingStartups"></section>
+    <section class="dashboard-grid" id="pendingInvestors"></section>
+
+    <footer>
+        <p>© 2026 Fund My Startup. All Rights Reserved.</p>
+    </footer>
+
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>
