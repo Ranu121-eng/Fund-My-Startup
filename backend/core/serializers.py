@@ -189,6 +189,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
 class StartupListSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.category_name', read_only=True)
+    description_preview = serializers.SerializerMethodField()
 
     class Meta:
         model = Startup
@@ -197,6 +198,8 @@ class StartupListSerializer(serializers.ModelSerializer):
             'founder_name',
             'company_name',
             'category_name',
+            'startup_description',
+            'description_preview',
             'funding_required',
             'country',
             'state',
@@ -204,6 +207,48 @@ class StartupListSerializer(serializers.ModelSerializer):
             'profile_status',
             'created_at',
         ]
+
+    def get_description_preview(self, obj):
+        if obj.startup_description:
+            text = obj.startup_description.strip()
+            return text if len(text) <= 160 else f'{text[:157]}...'
+        return ''
+
+
+class PublicStartupDetailSerializer(serializers.ModelSerializer):
+    """Public startup profile (no sensitive contact fields)."""
+
+    category_name = serializers.CharField(source='category.category_name', read_only=True)
+
+    class Meta:
+        model = Startup
+        fields = [
+            'startup_id',
+            'founder_name',
+            'company_name',
+            'website_url',
+            'startup_description',
+            'funding_required',
+            'country',
+            'state',
+            'district',
+            'category_name',
+            'profile_status',
+            'created_at',
+        ]
+
+
+class DocumentUploadSerializer(serializers.Serializer):
+    """Validate document re-upload requests."""
+
+    document_type = serializers.ChoiceField(choices=['aadhaar', 'pan', 'pitch_deck'])
+    file = serializers.FileField()
+
+    def validate(self, attrs):
+        error = validate_uploaded_file(attrs.get('file'))
+        if error:
+            raise serializers.ValidationError({'file': error})
+        return attrs
 
 
 class StartupDetailSerializer(serializers.ModelSerializer):

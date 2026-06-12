@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Sum
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -29,11 +30,12 @@ from .models import (
     StartupCategory,
     UserType,
 )
-from .permissions import IsInvestorUser, IsPlatformAdmin, IsStartupUser
+from .permissions import IsInvestorUser, IsPlatformAdmin, IsStartupOrInvestor, IsStartupUser
 from .serializers import (
     ContactMessageSerializer,
     DocumentSerializer,
     DocumentStatusUpdateSerializer,
+    DocumentUploadSerializer,
     FundingRequestSerializer,
     InvestmentOfferSerializer,
     InvestmentSerializer,
@@ -41,6 +43,7 @@ from .serializers import (
     InvestorRegistrationSerializer,
     LoginSerializer,
     ProfileStatusUpdateSerializer,
+    PublicStartupDetailSerializer,
     StartupCategorySerializer,
     StartupDetailSerializer,
     StartupListSerializer,
@@ -288,6 +291,52 @@ class ApprovedStartupListView(generics.ListAPIView):
         if category:
             queryset = queryset.filter(category__category_name__iexact=category)
         return queryset.order_by('-created_at')
+
+
+class StartupDetailView(APIView):
+    """Public detail for an approved startup. Investors receive full contact info."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, startup_id):
+        startup = get_object_or_404(
+            Startup.objects.select_related('category'),
+            startup_id=startup_id,
+            profile_status=ProfileStatus.APPROVED,
+        )
+        user = getattr(request, 'user', None)
+        if getattr(user, 'is_authenticated', False) and user.user_type == 'investor':
+            data = StartupDetailSerializer(startup).data
+        else:
+            data = PublicStartupDetailSerializer(startup).data
+        return Response({'success': True, 'startup': data})
+
+
+class DocumentUploadView(APIView):
+    """Allow startups/investors to re-upload KYC or pitch deck documents."""
+
+    permission_classes = [IsAuthenticated, IsStartupOrInvestor]
+
+    def post(self, request):
+        serializer = DocumentUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        user_type = request.user.user_type
+
+        document = Document.objects.create(
+            user_type=user_type,
+            user_id=request.user.user_id,
+            document_type=data['document_type'],
+            file_path=data['file'],
+        )
+        return Response(
+            {
+                'success': True,
+                'message': 'Document uploaded successfully.',
+                'document': DocumentSerializer(document, context={'request': request}).data,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class StartupDashboardView(APIView):

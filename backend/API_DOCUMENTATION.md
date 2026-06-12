@@ -101,6 +101,8 @@ Open the `frontend/` folder with Live Server (VS Code) or any static server on p
 | POST | `/api/register/startup/` | Public | Startup registration + file uploads |
 | POST | `/api/register/investor/` | Public | Investor registration + file uploads |
 | POST | `/api/contact/` | Public | Contact form submission |
+| GET | `/api/startups/{id}/` | Public/Investor JWT | Startup detail (contact info for investors) |
+| POST | `/api/documents/upload/` | Startup/Investor JWT | Re-upload pitch deck / KYC documents |
 | GET | `/api/categories/` | Public | List startup categories |
 | GET | `/api/startups/` | Public | List approved startups |
 | GET | `/api/dashboard/startup/` | Startup JWT | Startup dashboard data |

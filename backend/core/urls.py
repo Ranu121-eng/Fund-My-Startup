@@ -17,6 +17,8 @@ urlpatterns = [
     # Public listings
     path('categories/', views.StartupCategoryListView.as_view(), name='api-categories'),
     path('startups/', views.ApprovedStartupListView.as_view(), name='api-startups'),
+    path('startups/<int:startup_id>/', views.StartupDetailView.as_view(), name='api-startup-detail'),
+    path('documents/upload/', views.DocumentUploadView.as_view(), name='api-document-upload'),
 
     # Dashboards
     path('dashboard/startup/', views.StartupDashboardView.as_view(), name='api-startup-dashboard'),

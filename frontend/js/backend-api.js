@@ -362,26 +362,7 @@ function bindBackendForms() {
 }
 
 async function populateStartupListingPage() {
-    const section = document.querySelector('.startup-section');
-    if (!section) return;
-    try {
-        const startups = await loadApprovedStartups();
-        if (!Array.isArray(startups) || startups.length === 0) return;
-        section.querySelectorAll('.startup-card').forEach((c) => c.remove());
-        startups.forEach((s) => {
-            const card = document.createElement('div');
-            card.className = 'startup-card';
-            card.innerHTML = `
-                <div class="card-content">
-                    <h2>${s.company_name} <span>(${s.category_name || 'Startup'})</span></h2>
-                    <p>Funding: ${formatINR(s.funding_required)} | ${s.district}, ${s.state}</p>
-                    <p>Founder: ${s.founder_name}</p>
-                </div>`;
-            section.appendChild(card);
-        });
-    } catch (e) {
-        console.warn('Could not load startups from API:', e.message);
-    }
+    /* Handled by listings.js */
 }
 
 async function populateCategoryDropdowns() {
@@ -409,7 +390,6 @@ async function populateCategoryDropdowns() {
 
 function initApp() {
     bindBackendForms();
-    populateStartupListingPage();
     if (window.location.pathname.includes('register')) {
         populateCategoryDropdowns();
     }
@@ -428,4 +408,6 @@ window.FundMyStartupAPI = {
     logoutUser,
     formatINR,
     clearAuthSession,
+    loadApprovedStartups,
+    loadCategories,
 };

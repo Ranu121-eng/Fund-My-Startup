@@ -133,10 +133,20 @@
     });
 })();
 
-// Load backend API integration
-(function loadBackendApi() {
-    const script = document.createElement('script');
-    script.src = 'js/backend-api.js';
-    script.async = false;
-    document.body.appendChild(script);
+// Load backend API + UI components + listings
+(function loadAppScripts() {
+    const scripts = ['js/backend-api.js', 'js/components.js', 'js/listings.js'];
+    let index = 0;
+    function loadNext() {
+        if (index >= scripts.length) return;
+        const script = document.createElement('script');
+        script.src = scripts[index];
+        script.async = false;
+        script.onload = () => {
+            index += 1;
+            loadNext();
+        };
+        document.body.appendChild(script);
+    }
+    loadNext();
 })();
