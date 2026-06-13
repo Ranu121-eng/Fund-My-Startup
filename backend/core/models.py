@@ -84,6 +84,9 @@ class Startup(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
+    is_email_verified = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
+    is_two_factor_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -114,6 +117,9 @@ class Investor(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
+    is_email_verified = models.BooleanField(default=False)
+    two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
+    is_two_factor_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -141,6 +147,7 @@ class Document(models.Model):
         choices=DocumentStatus.choices,
         default=DocumentStatus.PENDING,
     )
+    remarks = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -264,3 +271,171 @@ class PlatformAdmin(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.email})'
+
+
+class PasswordResetToken(models.Model):
+    """Token for resetting user passwords securely."""
+
+    token_id = models.AutoField(primary_key=True)
+    email = models.EmailField(max_length=100)
+    user_type = models.CharField(
+        max_length=20,
+        choices=[('startup', 'Startup'), ('investor', 'Investor'), ('admin', 'Admin')],
+    )
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'password_reset_tokens'
+
+    def __str__(self):
+        return f'{self.email} ({self.user_type}) - {self.token[:8]}'
+
+
+class EmailVerificationToken(models.Model):
+    """Token for email verification on registration."""
+
+    token_id = models.AutoField(primary_key=True)
+    email = models.EmailField(max_length=100)
+    user_type = models.CharField(
+        max_length=20,
+        choices=[('startup', 'Startup'), ('investor', 'Investor')],
+    )
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'email_verification_tokens'
+
+    def __str__(self):
+        return f'{self.email} ({self.user_type}) - {self.token[:8]}'
+
+
+class Message(models.Model):
+    """Real-time chat messages between Startup and Investor."""
+
+    message_id = models.AutoField(primary_key=True)
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        db_column='startup_id',
+        related_name='messages',
+    )
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        db_column='investor_id',
+        related_name='messages',
+    )
+    sender_type = models.CharField(
+        max_length=10,
+        choices=[('startup', 'Startup'), ('investor', 'Investor')],
+    )
+    content = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'messages'
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Message #{self.message_id}: {self.sender_type} -> {self.content[:20]}'
+
+
+class Meeting(models.Model):
+    """Scheduled meeting records between Startup and Investor."""
+
+    class MeetingStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        ACCEPTED = 'accepted', 'Accepted'
+        REJECTED = 'rejected', 'Rejected'
+        CANCELLED = 'cancelled', 'Cancelled'
+
+    meeting_id = models.AutoField(primary_key=True)
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        db_column='startup_id',
+        related_name='meetings',
+    )
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        db_column='investor_id',
+        related_name='meetings',
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    scheduled_time = models.DateTimeField()
+    location_or_link = models.CharField(max_length=255, blank=True, null=True)
+    status = models.CharField(
+        max_length=20,
+        choices=MeetingStatus.choices,
+        default=MeetingStatus.PENDING,
+    )
+    created_by_type = models.CharField(
+        max_length=10,
+        choices=[('startup', 'Startup'), ('investor', 'Investor')],
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'meetings'
+        ordering = ['-scheduled_time']
+
+    def __str__(self):
+        return f'Meeting #{self.meeting_id}: {self.title} ({self.status})'
+
+
+class SavedStartup(models.Model):
+    """Investor saved/favorited startups."""
+
+    saved_id = models.AutoField(primary_key=True)
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        db_column='investor_id',
+        related_name='saved_startups',
+    )
+    startup = models.ForeignKey(
+        Startup,
+        on_delete=models.CASCADE,
+        db_column='startup_id',
+        related_name='saved_by_investors',
+    )
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'saved_startups'
+        unique_together = ('investor', 'startup')
+
+    def __str__(self):
+        return f'{self.investor.full_name} saved {self.startup.company_name}'
+
+
+class Notification(models.Model):
+    """In-app notifications for users."""
+
+    notification_id = models.AutoField(primary_key=True)
+    user_type = models.CharField(
+        max_length=20,
+        choices=[('startup', 'Startup'), ('investor', 'Investor'), ('admin', 'Admin')],
+    )
+    user_id = models.IntegerField()
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'notifications'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'Notification #{self.notification_id} for {self.user_type}:{self.user_id}'
+
+

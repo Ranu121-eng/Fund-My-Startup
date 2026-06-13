@@ -56,6 +56,8 @@
                 statCards[3].textContent = (data.my_investments || []).length;
             }
 
+            components.wireTwoFactorAuth(api, investor.is_two_factor_enabled);
+
             const grid = document.querySelector('.dashboard-grid');
             if (!grid) return;
 

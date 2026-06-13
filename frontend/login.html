@@ -25,9 +25,9 @@
         </div>
 
     <div class="nav-links">
-        <a href="index.html" class="active">Home</a>
+        <a href="index.html">Home</a>
         <a href="startup.html">Startups</a>
-        <a href="investor.html" class="active">Investors</a>
+        <a href="investor.html">Investors</a>
         <a href="about.html">About</a>
         <a href="contact.html">Contact us</a>
     </div>
@@ -74,45 +74,67 @@
 
         <form id="loginForm">
 
-            <input
-                type="text"
-                placeholder="Username/Email Address"
-                required
-            >
-
-            <div class="password-box">
-
+            <div id="loginFields">
                 <input
-                    type="password"
-                    id="password"
-                    placeholder="Password"
+                    type="text"
+                    placeholder="Username/Email Address"
                     required
                 >
 
-                <i
-                    class="fa-regular fa-eye"
-                    id="togglePassword">
-                </i>
+                <div class="password-box">
 
+                    <input
+                        type="password"
+                        id="password"
+                        placeholder="Password"
+                        required
+                    >
+
+                    <i
+                        class="fa-regular fa-eye"
+                        id="togglePassword">
+                    </i>
+
+                </div>
+
+                <a href="forgot-password.html" class="forgot-link">
+                    Forgot Password ?
+                </a>
+
+                <h2>Login As</h2>
+
+                <select required>
+                    <option>Select</option>
+                    <option>Investor</option>
+                    <option>Startup</option>
+                    <option>Admin</option>
+
+                </select>
+
+                <button type="submit" class="submit-btn">
+                    Login
+                </button>
             </div>
 
-            <a href="#" class="forgot-link">
-                Forgot Password ?
-            </a>
-
-            <h2>Login As</h2>
-
-            <select required>
-                <option>Select</option>
-                <option>Investor</option>
-                <option>Startup</option>
-                <option>Admin</option>
-
-            </select>
-
-            <button type="submit" class="submit-btn">
-                Login
-            </button>
+            <div id="twoFactorContainer" style="display: none;">
+                <h2 style="text-align: center; margin-bottom: 20px;">Two-Factor Verification</h2>
+                <p style="text-align: center; margin-bottom: 20px; color: #555; font-size: 16px;">
+                    Enter the 6-digit verification code from your authenticator app.
+                </p>
+                <input
+                    type="text"
+                    id="otpCode"
+                    placeholder="Enter 6-digit Code"
+                    maxlength="6"
+                    style="text-align: center; font-size: 24px; letter-spacing: 5px;"
+                >
+                <button type="button" id="verify2faBtn" class="submit-btn">
+                    Verify Code
+                </button>
+                <div class="register-links" style="margin-top: 15px;">
+                    <a href="#" id="cancel2faLink" style="text-decoration: none; color: #111;">Cancel</a>
+                </div>
+            </div>
 
             <div class="register-links">
 

@@ -3,27 +3,37 @@ API views for Fund My Startup.
 Handles registration, login, contact, dashboards, funding, and admin workflows.
 """
 
+from datetime import timedelta
 from decimal import Decimal
+import secrets
+import urllib.parse
 
+from django.core import signing
+from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+import pyotp
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 
 from .authentication import build_tokens
 from .models import (
     ContactMessage,
     Document,
     DocumentType,
+    EmailVerificationToken,
     FundingRequest,
     FundingRequestStatus,
     Investment,
     InvestmentOffer,
     Investor,
     OfferStatus,
+    PasswordResetToken,
     PlatformAdmin,
     ProfileStatus,
     Startup,
@@ -36,6 +46,7 @@ from .serializers import (
     DocumentSerializer,
     DocumentStatusUpdateSerializer,
     DocumentUploadSerializer,
+    ForgotPasswordSerializer,
     FundingRequestSerializer,
     InvestmentOfferSerializer,
     InvestmentSerializer,
@@ -44,12 +55,17 @@ from .serializers import (
     LoginSerializer,
     ProfileStatusUpdateSerializer,
     PublicStartupDetailSerializer,
+    ResetPasswordSerializer,
     StartupCategorySerializer,
     StartupDetailSerializer,
     StartupListSerializer,
     StartupRegistrationSerializer,
 )
-from .utils import hash_password, verify_password
+
+from rest_framework.throttling import ScopedRateThrottle
+
+from .utils import hash_password, verify_password, password_reset_token_generator
+
 
 
 class HealthCheckView(APIView):
@@ -132,10 +148,61 @@ class StartupRegisterView(APIView):
             status=FundingRequestStatus.OPEN,
         )
 
+        # Generate email verification token
+        token = secrets.token_urlsafe(32)
+        EmailVerificationToken.objects.create(
+            email=startup.email,
+            user_type='startup',
+            token=token,
+        )
+
+        # Send Verification Email
+        base_url = request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000'
+        verify_link = f"{base_url}/frontend/verify-email.html?token={token}&email={startup.email}&type=startup"
+
+        subject = "Verify Your Email - Fund My Startup"
+        message = (
+            f"Hello {startup.founder_name},\n\n"
+            f"Thank you for registering on Fund My Startup!\n"
+            f"Please verify your email address by clicking the link below:\n\n"
+            f"{verify_link}\n\n"
+            f"After email verification, your profile will be reviewed by the platform administrator for approval.\n\n"
+            f"Regards,\n"
+            f"Fund My Startup Team"
+        )
+        html_message = (
+            f"<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
+            f"<h2>Verify Your Email Address</h2>"
+            f"<p>Hello {startup.founder_name},</p>"
+            f"<p>Thank you for registering on Fund My Startup!</p>"
+            f"<p>Please click the button below to verify your email address:</p>"
+            f"<div style='margin: 25px 0;'>"
+            f"  <a href='{verify_link}' style='background-color: #f7934c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email</a>"
+            f"</div>"
+            f"<p>Or copy and paste this URL into your browser:</p>"
+            f"<p><a href='{verify_link}'>{verify_link}</a></p>"
+            f"<p>After verifying your email, the platform administrator will review and approve your account profile.</p>"
+            f"<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />"
+            f"<p style='font-size: 12px; color: #777;'>This email was sent automatically by Fund My Startup.</p>"
+            f"</div>"
+        )
+
+        try:
+            send_mail(
+                subject,
+                message,
+                'no-reply@fundmystartup.com',
+                [startup.email],
+                fail_silently=False,
+                html_message=html_message,
+            )
+        except Exception as e:
+            print(f"Failed to send verification email: {e}")
+
         return Response(
             {
                 'success': True,
-                'message': 'Startup registration submitted successfully. Status: Pending approval.',
+                'message': 'Startup registration submitted successfully. Please check your email to verify your account.',
                 'startup_id': startup.startup_id,
                 'profile_status': startup.profile_status,
             },
@@ -180,10 +247,61 @@ class InvestorRegisterView(APIView):
             },
         )
 
+        # Generate email verification token
+        token = secrets.token_urlsafe(32)
+        EmailVerificationToken.objects.create(
+            email=investor.email,
+            user_type='investor',
+            token=token,
+        )
+
+        # Send Verification Email
+        base_url = request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000'
+        verify_link = f"{base_url}/frontend/verify-email.html?token={token}&email={investor.email}&type=investor"
+
+        subject = "Verify Your Email - Fund My Startup"
+        message = (
+            f"Hello {investor.full_name},\n\n"
+            f"Thank you for registering on Fund My Startup!\n"
+            f"Please verify your email address by clicking the link below:\n\n"
+            f"{verify_link}\n\n"
+            f"After email verification, your profile will be reviewed by the platform administrator for approval.\n\n"
+            f"Regards,\n"
+            f"Fund My Startup Team"
+        )
+        html_message = (
+            f"<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
+            f"<h2>Verify Your Email Address</h2>"
+            f"<p>Hello {investor.full_name},</p>"
+            f"<p>Thank you for registering on Fund My Startup!</p>"
+            f"<p>Please click the button below to verify your email address:</p>"
+            f"<div style='margin: 25px 0;'>"
+            f"  <a href='{verify_link}' style='background-color: #f7934c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email</a>"
+            f"</div>"
+            f"<p>Or copy and paste this URL into your browser:</p>"
+            f"<p><a href='{verify_link}'>{verify_link}</a></p>"
+            f"<p>After verifying your email, the platform administrator will review and approve your account profile.</p>"
+            f"<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />"
+            f"<p style='font-size: 12px; color: #777;'>This email was sent automatically by Fund My Startup.</p>"
+            f"</div>"
+        )
+
+        try:
+            send_mail(
+                subject,
+                message,
+                'no-reply@fundmystartup.com',
+                [investor.email],
+                fail_silently=False,
+                html_message=html_message,
+            )
+        except Exception as e:
+            print(f"Failed to send verification email: {e}")
+
         return Response(
             {
                 'success': True,
-                'message': 'Investor registration submitted successfully. Status: Pending approval.',
+                'message': 'Investor registration submitted successfully. Please check your email to verify your account.',
                 'investor_id': investor.investor_id,
                 'profile_status': investor.profile_status,
             },
@@ -222,12 +340,37 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        # Enforce email verification for startup and investor accounts
+        if user_type in ('startup', 'investor') and not getattr(account, 'is_email_verified', False):
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Please verify your email address first. Check your inbox for the verification link.',
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         profile_status = getattr(account, 'profile_status', None)
         if profile_status == ProfileStatus.REJECTED:
             return Response(
                 {'success': False, 'message': 'Your account has been rejected. Please contact support.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        # Enforce 2FA check
+        if getattr(account, 'is_two_factor_enabled', False):
+            user_id = getattr(account, 'startup_id', None) or getattr(account, 'investor_id', None) or account.admin_id
+            temp_token = signing.dumps({
+                'user_id': user_id,
+                'user_type': user_type,
+                'email': email
+            }, salt='fms-2fa-login')
+            return Response({
+                'success': True,
+                'requires_2fa': True,
+                'two_factor_token': temp_token,
+                'message': 'Two-factor authentication code is required to complete login.'
+            }, status=status.HTTP_200_OK)
 
         user_id = getattr(account, 'startup_id', None) or getattr(account, 'investor_id', None) or account.admin_id
         tokens = build_tokens(user_type, user_id, email)
@@ -663,3 +806,421 @@ class InvestmentListView(APIView):
         else:
             qs = Investment.objects.all()
         return Response(InvestmentSerializer(qs.select_related('startup', 'investor'), many=True).data)
+
+
+class ForgotPasswordView(APIView):
+    """Generate password reset token and send reset link to the user."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
+
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].lower()
+        user_type = serializer.validated_data['user_type']
+
+        # Determine if email exists in corresponding table and fetch the account
+        account = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(email__iexact=email).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(email__iexact=email).first()
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(email__iexact=email).first()
+
+        if account:
+            # Generate secure token using Django's PasswordResetTokenGenerator logic
+            token = password_reset_token_generator.make_token(account)
+            expires_at = timezone.now() + timedelta(hours=1)
+
+            # Deactivate previous tokens for this email just in case
+            PasswordResetToken.objects.filter(email=email, user_type=user_type, is_used=False).update(is_used=True)
+
+            # Create token entry
+            PasswordResetToken.objects.create(
+                email=email,
+                user_type=user_type,
+                token=token,
+                expires_at=expires_at,
+            )
+
+            # Send Email
+            # Using absolute URI if request is available, or absolute local fallback
+            base_url = request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000'
+            reset_link = f"{base_url}/frontend/reset-password.html?token={token}&email={email}&type={user_type}"
+
+            subject = "Reset Your Password - Fund My Startup"
+            message = (
+                f"Hello,\n\n"
+                f"We received a request to reset your password for your Fund My Startup {user_type} account.\n"
+                f"Please click the link below to set a new password. The link is valid for 1 hour:\n\n"
+                f"{reset_link}\n\n"
+                f"If you did not request this, please ignore this email.\n\n"
+                f"Regards,\n"
+                f"Fund My Startup Team"
+            )
+            html_message = (
+                f"<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
+                f"<h2>Reset Your Password</h2>"
+                f"<p>Hello,</p>"
+                f"<p>We received a request to reset the password for your Fund My Startup <strong>{user_type}</strong> account.</p>"
+                f"<p>Please click the button below to reset your password. This link is valid for 1 hour.</p>"
+                f"<div style='margin: 25px 0;'>"
+                f"  <a href='{reset_link}' style='background-color: #f7934c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Reset Password</a>"
+                f"</div>"
+                f"<p>Or copy and paste this URL into your browser:</p>"
+                f"<p><a href='{reset_link}'>{reset_link}</a></p>"
+                f"<p>If you did not request this reset, you can safely ignore this email.</p>"
+                f"<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />"
+                f"<p style='font-size: 12px; color: #777;'>This email was sent automatically by Fund My Startup.</p>"
+                f"</div>"
+            )
+
+            try:
+                send_mail(
+                    subject,
+                    message,
+                    'no-reply@fundmystartup.com',
+                    [email],
+                    fail_silently=False,
+                    html_message=html_message,
+                )
+            except Exception as e:
+                # Log the error but don't crash
+                print(f"Failed to send email to {email}: {e}")
+
+        # Always return success response for security (prevents user enumeration)
+        return Response(
+            {
+                'success': True,
+                'message': 'If the email is registered, a password reset link has been sent to it.',
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ResetPasswordView(APIView):
+    """Verify reset token and update user password."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
+
+    @transaction.atomic
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email'].lower()
+        token = serializer.validated_data['token']
+        password = serializer.validated_data['password']
+        user_type = serializer.validated_data['user_type']
+
+        # Retrieve user first
+        account = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(email__iexact=email).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(email__iexact=email).first()
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(email__iexact=email).first()
+
+        if not account:
+            return Response(
+                {'success': False, 'message': 'User account not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Look up valid token entry in database
+        token_entry = PasswordResetToken.objects.filter(
+            email=email,
+            token=token,
+            user_type=user_type,
+            is_used=False,
+            expires_at__gt=timezone.now(),
+        ).first()
+
+        if not token_entry:
+            return Response(
+                {
+                    'success': False,
+                    'message': 'The reset link is invalid, expired, or has already been used.',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Verify token cryptographically using Django's PasswordResetTokenGenerator
+        if not password_reset_token_generator.check_token(account, token):
+            return Response(
+                {
+                    'success': False,
+                    'message': 'The reset link is invalid, expired, or has already been used.',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update password
+        account.password = hash_password(password)
+        account.save(update_fields=['password'])
+
+        # Mark token as used
+        token_entry.is_used = True
+        token_entry.save(update_fields=['is_used'])
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Your password has been successfully reset. You can now log in.',
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class VerifyEmailView(APIView):
+    """Verify registration email token and activate account status."""
+
+    permission_classes = [AllowAny]
+
+    @transaction.atomic
+    def post(self, request):
+        token = request.data.get('token')
+        email = request.data.get('email')
+        user_type = request.data.get('user_type')
+
+        if not token or not email or not user_type:
+            return Response(
+                {'success': False, 'message': 'token, email, and user_type are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        token_entry = EmailVerificationToken.objects.filter(
+            email=email.lower(),
+            token=token,
+            user_type=user_type,
+            is_used=False,
+        ).first()
+
+        if not token_entry:
+            return Response(
+                {'success': False, 'message': 'Invalid, expired, or already used verification link.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Mark user as email verified
+        if user_type == 'startup':
+            account = Startup.objects.filter(email__iexact=email).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(email__iexact=email).first()
+        else:
+            account = None
+
+        if not account:
+            return Response(
+                {'success': False, 'message': 'User account not found.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        account.is_email_verified = True
+        account.save(update_fields=['is_email_verified'])
+
+        # Mark token as used
+        token_entry.is_used = True
+        token_entry.save(update_fields=['is_used'])
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Your email address has been successfully verified. It is now awaiting admin approval.',
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class Login2FAView(APIView):
+    """Complete login using TOTP code."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        two_factor_token = request.data.get('two_factor_token')
+        otp_code = request.data.get('otp_code')
+
+        if not two_factor_token or not otp_code:
+            return Response(
+                {'success': False, 'message': 'two_factor_token and otp_code are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            data = signing.loads(two_factor_token, salt='fms-2fa-login', max_age=300)
+        except signing.SignatureExpired:
+            return Response({'success': False, 'message': 'The 2FA session has expired. Please log in again.'}, status=400)
+        except signing.BadSignature:
+            return Response({'success': False, 'message': 'Invalid 2FA session.'}, status=400)
+
+        user_id = data['user_id']
+        user_type = data['user_type']
+        email = data['email']
+
+        account = None
+        redirect_url = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(startup_id=user_id).first()
+            redirect_url = '/frontend/startup-dashboard.html'
+        elif user_type == 'investor':
+            account = Investor.objects.filter(investor_id=user_id).first()
+            redirect_url = '/frontend/investor-dashboard.html'
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(admin_id=user_id).first()
+            redirect_url = '/frontend/admin-dashboard.html'
+
+        if not account:
+            return Response({'success': False, 'message': 'Account not found.'}, status=404)
+
+        # Verify code
+        totp = pyotp.TOTP(account.two_factor_secret)
+        if not totp.verify(otp_code):
+            return Response({'success': False, 'message': 'Invalid 2FA code.'}, status=400)
+
+        # Success! Build tokens
+        tokens = build_tokens(user_type, user_id, email)
+        display_name = getattr(account, 'founder_name', None) or getattr(account, 'full_name', None) or account.name
+        profile_status = getattr(account, 'profile_status', None)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Login successful.',
+                'user_type': user_type,
+                'user_id': user_id,
+                'display_name': display_name,
+                'email': email,
+                'profile_status': profile_status,
+                'redirect_url': redirect_url,
+                'tokens': tokens,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class Setup2FAView(APIView):
+    """Prepare 2FA setup for authenticated users by generating secret and QR code."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+        email = request.user.email
+
+        # Generate a random base32 secret
+        secret = pyotp.random_base32()
+
+        # Update the user's secret temporarily (disabled until verified)
+        if user_type == 'startup':
+            Startup.objects.filter(startup_id=user_id).update(two_factor_secret=secret)
+        elif user_type == 'investor':
+            Investor.objects.filter(investor_id=user_id).update(two_factor_secret=secret)
+        elif user_type == 'admin':
+            PlatformAdmin.objects.filter(admin_id=user_id).update(two_factor_secret=secret)
+
+        # Generate URI for QR code scanning
+        totp = pyotp.TOTP(secret)
+        uri = totp.provisioning_uri(name=email, issuer_name="FundMyStartup")
+        qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(uri)}"
+
+        return Response(
+            {
+                'success': True,
+                'secret': secret,
+                'provisioning_uri': uri,
+                'qr_code_url': qr_code_url,
+            }
+        )
+
+
+class Verify2FAEnableView(APIView):
+    """Verify code and fully enable 2FA on user account."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code')
+        if not code:
+            return Response({'success': False, 'message': 'Verification code is required.'}, status=400)
+
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+
+        account = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(startup_id=user_id).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(investor_id=user_id).first()
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(admin_id=user_id).first()
+
+        if not account or not account.two_factor_secret:
+            return Response({'success': False, 'message': '2FA setup was not initialized.'}, status=400)
+
+        # Verify OTP code
+        totp = pyotp.TOTP(account.two_factor_secret)
+        if not totp.verify(code):
+            return Response({'success': False, 'message': 'Invalid verification code.'}, status=400)
+
+        # Enable 2FA
+        account.is_two_factor_enabled = True
+        account.save(update_fields=['is_two_factor_enabled'])
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Two-factor authentication has been successfully enabled on your account.',
+            }
+        )
+
+
+class Disable2FAView(APIView):
+    """Disable 2FA on user account after verifying code."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code')
+        if not code:
+            return Response({'success': False, 'message': 'Verification code is required.'}, status=400)
+
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+
+        account = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(startup_id=user_id).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(investor_id=user_id).first()
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(admin_id=user_id).first()
+
+        if not account or not account.is_two_factor_enabled:
+            return Response({'success': False, 'message': '2FA is not enabled on this account.'}, status=400)
+
+        # Verify code
+        totp = pyotp.TOTP(account.two_factor_secret)
+        if not totp.verify(code):
+            return Response({'success': False, 'message': 'Invalid verification code.'}, status=400)
+
+        # Disable 2FA
+        account.is_two_factor_enabled = False
+        account.two_factor_secret = None
+        account.save(update_fields=['is_two_factor_enabled', 'two_factor_secret'])
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Two-factor authentication has been successfully disabled.',
+            }
+        )
+
+
+

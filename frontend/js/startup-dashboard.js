@@ -75,6 +75,8 @@
                     <p><strong>Email:</strong> ${startup.email || '-'}</p>`;
             }
 
+            components.wireTwoFactorAuth(api, startup.is_two_factor_enabled);
+
             const activityBox = document.querySelectorAll('.dashboard-grid .dashboard-box')[1];
             if (activityBox) {
                 const offers = data.investment_offers || [];

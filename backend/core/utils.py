@@ -69,3 +69,15 @@ def validate_uploaded_file(uploaded_file) -> str | None:
         return f'Invalid file type. Allowed: {", ".join(sorted(allowed))}'
 
     return None
+
+
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+
+class AccountPasswordResetTokenGenerator(PasswordResetTokenGenerator):
+    def _make_hash_value(self, user, timestamp):
+        # Generates a token using user's PK, password hash, email, and registration time.
+        created_at = getattr(user, 'created_at', '')
+        return str(user.pk) + str(user.password) + str(timestamp) + str(created_at) + str(user.email)
+
+password_reset_token_generator = AccountPasswordResetTokenGenerator()
+

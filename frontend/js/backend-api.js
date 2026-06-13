@@ -318,6 +318,8 @@ function bindBackendForms() {
     const loginForm = document.getElementById('loginForm');
     if (loginForm && !loginForm.dataset.apiBound) {
         loginForm.dataset.apiBound = 'true';
+        let twoFactorToken = null;
+
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             e.stopImmediatePropagation();
@@ -333,27 +335,76 @@ function bindBackendForms() {
             }
             try {
                 const result = await submitLoginToApi(email, password, userTypeRaw);
-                saveAuthSession(result);
-                if (result.profile_status === 'rejected') {
-                    alert('Your account was rejected. Contact support.');
-                    clearAuthSession();
+                if (result.requires_2fa) {
+                    twoFactorToken = result.two_factor_token;
+                    document.getElementById('loginFields').style.display = 'none';
+                    document.getElementById('twoFactorContainer').style.display = 'block';
                     return;
                 }
-                if (result.profile_status === 'pending' && result.user_type !== 'admin') {
-                    alert('Login successful. Your profile is pending admin approval.');
-                }
-                if (result.user_type === 'startup') {
-                    window.location.href = 'startup-dashboard.html';
-                } else if (result.user_type === 'investor') {
-                    window.location.href = 'investor-dashboard.html';
-                } else if (result.user_type === 'admin') {
-                    window.location.href = 'admin-dashboard.html';
-                }
-                loginForm.reset();
+                handleLoginSuccess(result);
             } catch (error) {
                 alert(error.message);
             }
         }, true);
+
+        const verify2faBtn = document.getElementById('verify2faBtn');
+        if (verify2faBtn) {
+            verify2faBtn.addEventListener('click', async () => {
+                const otpCodeInput = document.getElementById('otpCode');
+                const otpCode = otpCodeInput.value.trim();
+                if (!otpCode || otpCode.length !== 6) {
+                    alert('Please enter a 6-digit verification code.');
+                    return;
+                }
+                try {
+                    verify2faBtn.disabled = true;
+                    const result = await fundMyStartupRequest('/auth/login-2fa/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            two_factor_token: twoFactorToken,
+                            otp_code: otpCode
+                        })
+                    });
+                    handleLoginSuccess(result);
+                } catch (error) {
+                    alert(error.message);
+                } finally {
+                    verify2faBtn.disabled = false;
+                }
+            });
+        }
+
+        const cancel2faLink = document.getElementById('cancel2faLink');
+        if (cancel2faLink) {
+            cancel2faLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('loginFields').style.display = 'block';
+                document.getElementById('twoFactorContainer').style.display = 'none';
+                document.getElementById('otpCode').value = '';
+                twoFactorToken = null;
+            });
+        }
+
+        function handleLoginSuccess(result) {
+            saveAuthSession(result);
+            if (result.profile_status === 'rejected') {
+                alert('Your account was rejected. Contact support.');
+                clearAuthSession();
+                return;
+            }
+            if (result.profile_status === 'pending' && result.user_type !== 'admin') {
+                alert('Login successful. Your profile is pending admin approval.');
+            }
+            if (result.user_type === 'startup') {
+                window.location.href = 'startup-dashboard.html';
+            } else if (result.user_type === 'investor') {
+                window.location.href = 'investor-dashboard.html';
+            } else if (result.user_type === 'admin') {
+                window.location.href = 'admin-dashboard.html';
+            }
+            loginForm.reset();
+        }
     }
 
     document.querySelectorAll('.logout-btn').forEach((btn) => {

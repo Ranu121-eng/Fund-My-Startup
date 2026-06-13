@@ -10,7 +10,15 @@ urlpatterns = [
     # Public auth & registration
     path('auth/login/', views.LoginView.as_view(), name='api-login'),
     path('auth/token/refresh/', TokenRefreshView.as_view(), name='api-token-refresh'),
+    path('auth/forgot-password/', views.ForgotPasswordView.as_view(), name='api-forgot-password'),
+    path('auth/reset-password/', views.ResetPasswordView.as_view(), name='api-reset-password'),
+    path('auth/verify-email/', views.VerifyEmailView.as_view(), name='api-verify-email'),
+    path('auth/login-2fa/', views.Login2FAView.as_view(), name='api-login-2fa'),
+    path('auth/2fa/setup/', views.Setup2FAView.as_view(), name='api-2fa-setup'),
+    path('auth/2fa/verify/', views.Verify2FAEnableView.as_view(), name='api-2fa-verify'),
+    path('auth/2fa/disable/', views.Disable2FAView.as_view(), name='api-2fa-disable'),
     path('register/startup/', views.StartupRegisterView.as_view(), name='api-register-startup'),
+
     path('register/investor/', views.InvestorRegisterView.as_view(), name='api-register-investor'),
     path('contact/', views.ContactMessageView.as_view(), name='api-contact'),
 

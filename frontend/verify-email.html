@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/login.css">
+
+    <!-- GOOGLE FONT -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="light-page">
+
+<!-- ================= NAVBAR ================= -->
+  <nav class="navbar">
+        <div class="logo">
+            <h2>FUND MY</h2>
+            <h2>START <span>UP</span></h2>
+        </div>
+
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="startup.html">Startups</a>
+        <a href="investor.html">Investors</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact us</a>
+    </div>
+
+    <div class="dropdown">
+            <button class="login-btn">
+                Login/Register
+            </button>
+            <div class="dropdown-content">
+                <a href="startup-register.html">Register as Startup</a>
+                <a href="investor-register.html">Register as Investor</a>
+                <a href="login.html">Login</a>
+            </div>
+    </div>
+  </nav>
+
+<!-- VERIFY EMAIL SECTION -->
+<section class="login-section">
+    <h1>Verify Your Email</h1>
+    <p class="subtitle" id="verifyStatusSubtitle">
+        We are processing your email verification request. Please hold...
+    </p>
+
+    <div class="login-box" id="verifyBox" style="padding: 60px 20px;">
+        <h2 id="verifyHeading" style="text-align: center; font-size: 28px; margin-bottom: 20px;">Verifying...</h2>
+        <p id="verifyMessage" style="text-align: center; font-size: 18px; line-height: 1.6; color: #555;">
+            Connecting to the secure verification service.
+        </p>
+        
+        <div style="margin-top: 30px; text-align: center;">
+            <a href="login.html" id="actionBtn" class="submit-btn" style="display: none; text-decoration: none; max-width: 280px; font-size: 20px; padding: 10px 20px; line-height: 1.5;">
+                Proceed to Login
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- API script integration -->
+<script src="js/backend-api.js"></script>
+<script src="js/verify-email.js"></script>
+
+</body>
+</html>

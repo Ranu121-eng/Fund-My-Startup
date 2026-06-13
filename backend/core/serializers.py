@@ -270,6 +270,7 @@ class StartupDetailSerializer(serializers.ModelSerializer):
             'district',
             'category_name',
             'profile_status',
+            'is_two_factor_enabled',
             'created_at',
         ]
 
@@ -291,6 +292,7 @@ class InvestorDetailSerializer(serializers.ModelSerializer):
             'state',
             'district',
             'profile_status',
+            'is_two_factor_enabled',
             'created_at',
         ]
 
@@ -353,3 +355,16 @@ class ProfileStatusUpdateSerializer(serializers.Serializer):
 
 class DocumentStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=['pending', 'approved', 'rejected'])
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    user_type = serializers.ChoiceField(choices=['startup', 'investor', 'admin'])
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    token = serializers.CharField()
+    password = serializers.CharField(min_length=6, write_only=True)
+    user_type = serializers.ChoiceField(choices=['startup', 'investor', 'admin'])
+
