@@ -201,12 +201,8 @@
             const api = window.FundMyStartupAPI;
             const components = window.FundMyStartupComponents;
             const path = window.location.pathname.toLowerCase();
-            const isIndex = path.endsWith('index.html') || path === '/' ||
-                path.endsWith('/frontend') || path.endsWith('/frontend/');
 
-            if (isIndex) {
-                await initIndexPage(api, components);
-            } else if (path.includes('explore.html')) {
+            if (path.includes('explore.html')) {
                 await initExplorePage(api, components);
             } else if (path.includes('startup.html') && !path.includes('startup-register') && !path.includes('startup-dashboard')) {
                 await initStartupListingPage(api, components);
