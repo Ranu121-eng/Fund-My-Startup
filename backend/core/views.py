@@ -52,6 +52,7 @@ from .serializers import (
     InvestmentSerializer,
     InvestorDetailSerializer,
     InvestorRegistrationSerializer,
+    InvestorListSerializer,
     LoginSerializer,
     ProfileStatusUpdateSerializer,
     PublicStartupDetailSerializer,
@@ -433,6 +434,20 @@ class ApprovedStartupListView(generics.ListAPIView):
         category = self.request.query_params.get('category')
         if category:
             queryset = queryset.filter(category__category_name__iexact=category)
+        return queryset.order_by('-created_at')
+
+
+class ApprovedInvestorListView(generics.ListAPIView):
+    """Public list of approved investors."""
+
+    serializer_class = InvestorListSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = Investor.objects.filter(profile_status=ProfileStatus.APPROVED)
+        domain = self.request.query_params.get('domain')
+        if domain:
+            queryset = queryset.filter(investor_domain__iexact=domain)
         return queryset.order_by('-created_at')
 
 

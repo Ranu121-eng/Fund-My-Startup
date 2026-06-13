@@ -368,3 +368,32 @@ class ResetPasswordSerializer(serializers.Serializer):
     password = serializers.CharField(min_length=6, write_only=True)
     user_type = serializers.ChoiceField(choices=['startup', 'investor', 'admin'])
 
+
+class InvestorListSerializer(serializers.ModelSerializer):
+    description_preview = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Investor
+        fields = [
+            'investor_id',
+            'full_name',
+            'investor_type',
+            'investor_domain',
+            'company_name',
+            'investor_description',
+            'description_preview',
+            'max_investment_range',
+            'country',
+            'state',
+            'district',
+            'profile_status',
+            'created_at',
+        ]
+
+    def get_description_preview(self, obj):
+        desc = obj.investor_description or ''
+        if len(desc) > 100:
+            return desc[:100] + '...'
+        return desc
+
+

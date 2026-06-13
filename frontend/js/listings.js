@@ -196,6 +196,26 @@
         await renderFeaturedStartups(api, components, section);
     }
 
+    async function initInvestorListingPage(api, components) {
+        const container = document.querySelector('section.container');
+        if (!container) return;
+
+        let investors;
+        try {
+            investors = await api.fundMyStartupRequest('/investors/');
+        } catch (e) {
+            console.warn('Unable to load investors:', e.message);
+            return;
+        }
+
+        if (Array.isArray(investors) && investors.length > 0) {
+            container.querySelectorAll('.card').forEach((c) => c.remove());
+            investors.forEach((inv) => {
+                container.appendChild(components.buildInvestorCard(inv, api));
+            });
+        }
+    }
+
     function initListings() {
         waitForDeps(async () => {
             const api = window.FundMyStartupAPI;
@@ -206,6 +226,8 @@
                 await initExplorePage(api, components);
             } else if (path.includes('startup.html') && !path.includes('startup-register') && !path.includes('startup-dashboard')) {
                 await initStartupListingPage(api, components);
+            } else if (path.includes('investor.html') && !path.includes('investor-register') && !path.includes('investor-dashboard')) {
+                await initInvestorListingPage(api, components);
             }
         });
     }

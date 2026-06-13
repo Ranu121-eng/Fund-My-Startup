@@ -380,6 +380,32 @@
         }
     }
 
+    function buildInvestorCard(investor, api) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // Use default profile image fallback
+        const imgUrl = 'images/profile.png';
+        const investorType = investor.investor_type || 'Investor';
+
+        card.innerHTML = `
+            <img src="${imgUrl}" alt="${investor.full_name}" style="object-fit: cover; border-radius: 14px;">
+            <div class="card-content">
+                <h2>${investor.full_name} <span>(${investorType})</span></h2>
+                <p>
+                    ${investor.investor_description || 'No description provided.'}
+                </p>
+                <p style="font-size: 15px; margin-top: 8px; color: #555;">
+                    Domain: <strong>${investor.investor_domain || '-'}</strong> | Range: <strong>Up to ${api.formatINR(investor.max_investment_range || 0)}</strong>
+                </p>
+                <p style="font-size: 14px; color: #777; margin-top: 4px;">
+                    Location: ${investor.district || ''}, ${investor.state || ''}
+                </p>
+            </div>
+        `;
+        return card;
+    }
+
     global.FundMyStartupComponents = {
         getCategoryImage,
         openStartupModal,
@@ -390,5 +416,6 @@
         buildCategoryCard,
         ensureComponentStyles,
         wireTwoFactorAuth,
+        buildInvestorCard,
     };
 })(window);
