@@ -297,6 +297,28 @@ class InvestorDetailSerializer(serializers.ModelSerializer):
         ]
 
 
+class PublicInvestorDetailSerializer(serializers.ModelSerializer):
+    """Public investor profile (no sensitive contact fields)."""
+
+    class Meta:
+        model = Investor
+        fields = [
+            'investor_id',
+            'full_name',
+            'investor_type',
+            'investor_domain',
+            'company_name',
+            'investor_description',
+            'max_investment_range',
+            'country',
+            'state',
+            'district',
+            'profile_status',
+            'created_at',
+        ]
+
+
+
 class FundingRequestSerializer(serializers.ModelSerializer):
     startup_company = serializers.CharField(source='startup.company_name', read_only=True)
 

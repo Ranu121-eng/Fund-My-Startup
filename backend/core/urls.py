@@ -6,6 +6,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 
 urlpatterns = [
+    path('', views.ApiRootView.as_view(), name='api-root'),
     path('health/', views.HealthCheckView.as_view(), name='api-health'),
     # Public auth & registration
     path('auth/login/', views.LoginView.as_view(), name='api-login'),
@@ -27,6 +28,7 @@ urlpatterns = [
     path('startups/', views.ApprovedStartupListView.as_view(), name='api-startups'),
     path('investors/', views.ApprovedInvestorListView.as_view(), name='api-investors'),
     path('startups/<int:startup_id>/', views.StartupDetailView.as_view(), name='api-startup-detail'),
+    path('investors/<int:investor_id>/', views.InvestorDetailView.as_view(), name='api-investor-detail'),
     path('documents/upload/', views.DocumentUploadView.as_view(), name='api-document-upload'),
 
     # Dashboards

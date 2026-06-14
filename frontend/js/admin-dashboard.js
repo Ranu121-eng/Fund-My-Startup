@@ -110,6 +110,32 @@
                     });
                 }
             }
+
+            const contactMessagesEl = document.getElementById('contactMessages');
+            if (contactMessagesEl) {
+                contactMessagesEl.innerHTML = '<div class="dashboard-box"><h2>Contact Messages</h2></div>';
+                const box = contactMessagesEl.querySelector('.dashboard-box');
+                const messagesList = data.contact_messages || [];
+                if (messagesList.length === 0) {
+                    box.innerHTML += '<p>No contact messages.</p>';
+                } else {
+                    messagesList.forEach((msg) => {
+                        const row = document.createElement('div');
+                        row.style.margin = '12px 0';
+                        row.style.padding = '12px 0';
+                        row.style.borderBottom = '1px solid #eee';
+                        const dateStr = new Date(msg.created_at).toLocaleString();
+                        row.innerHTML = `
+                            <p style="font-size:15px; margin-bottom: 4px;"><strong>From:</strong> ${msg.name} (<a href="mailto:${msg.email}">${msg.email}</a>)</p>
+                            <p style="font-size:12px; color:#999; margin-bottom: 8px;"><strong>Date:</strong> ${dateStr}</p>
+                            <p style="font-size:14px; color:#444; background:#f9f9f9; padding:12px; border-radius:8px; line-height:1.5; font-style:italic; border-left: 4px solid #f79a4b; margin:0;">
+                                "${msg.message}"
+                            </p>
+                        `;
+                        box.appendChild(row);
+                    });
+                }
+            }
         } catch (error) {
             alert(error.message || 'Failed to load admin dashboard.');
         }

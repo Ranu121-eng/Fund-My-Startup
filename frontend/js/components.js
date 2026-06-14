@@ -380,29 +380,129 @@
         }
     }
 
+    function ensureInvestorModalRoot() {
+        let root = document.getElementById('fms-investor-modal');
+        if (root) return root;
+
+        root = document.createElement('div');
+        root.id = 'fms-investor-modal';
+        root.className = 'fms-modal-overlay';
+        root.innerHTML = `
+            <div class="fms-modal" role="dialog" aria-modal="true" aria-labelledby="fms-modal-title-investor">
+                <button type="button" class="fms-modal-close" aria-label="Close">&times;</button>
+                <div class="fms-modal-body"></div>
+            </div>`;
+        document.body.appendChild(root);
+
+        root.addEventListener('click', (e) => {
+            if (e.target === root || e.target.classList.contains('fms-modal-close')) {
+                closeInvestorModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeInvestorModal();
+        });
+        return root;
+    }
+
+    function closeInvestorModal() {
+        const root = document.getElementById('fms-investor-modal');
+        if (root) {
+            root.classList.remove('is-open');
+            document.body.style.overflow = '';
+        }
+    }
+
+    async function openInvestorModal(investorId) {
+        ensureComponentStyles();
+        const api = global.FundMyStartupAPI;
+        if (!api) {
+            alert('Application is still loading. Please try again.');
+            return;
+        }
+
+        const root = ensureInvestorModalRoot();
+        const body = root.querySelector('.fms-modal-body');
+        body.innerHTML = '<p class="fms-modal-loading">Loading investor profile...</p>';
+        root.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const data = await api.fundMyStartupRequest(`/investors/${investorId}/`);
+            const inv = data.investor || data;
+
+            let contactHtml = '';
+            if (inv.email || inv.phone) {
+                contactHtml = `
+                    <div class="fms-modal-section">
+                        <h4>Contact Information</h4>
+                        ${inv.email ? `<p><strong>Email:</strong> <a href="mailto:${inv.email}">${inv.email}</a></p>` : ''}
+                        ${inv.phone ? `<p><strong>Phone:</strong> ${inv.phone}</p>` : ''}
+                    </div>`;
+            }
+
+            body.innerHTML = `
+                <div class="fms-modal-header">
+                     <span class="fms-modal-badge">${inv.investor_type || 'Investor'}</span>
+                     <h2 id="fms-modal-title-investor">${inv.full_name}</h2>
+                     ${inv.company_name ? `<p class="fms-modal-founder">Company: ${inv.company_name}</p>` : ''}
+                </div>
+                <div class="fms-modal-grid">
+                     <div class="fms-modal-section">
+                         <h4>Description</h4>
+                         <p>${inv.investor_description || 'No description provided.'}</p>
+                     </div>
+                     <div class="fms-modal-section">
+                         <h4>Investment details & Location</h4>
+                         <p><strong>Investment Range:</strong> Up to ${api.formatINR(inv.max_investment_range || 0)}</p>
+                         <p><strong>Investment Domain:</strong> ${inv.investor_domain || '-'}</p>
+                         <p><strong>Location:</strong> ${[inv.district, inv.state, inv.country].filter(Boolean).join(', ')}</p>
+                     </div>
+                     ${contactHtml}
+                </div>
+                <div class="fms-modal-actions" id="fms-modal-actions-investor"></div>`;
+
+            const actions = body.querySelector('#fms-modal-actions-investor');
+            if (localStorage.getItem('fms_user_type') === 'startup') {
+                const msgBtn = document.createElement('button');
+                msgBtn.type = 'button';
+                msgBtn.className = 'fms-btn fms-btn-primary';
+                msgBtn.textContent = 'Contact Investor via Email';
+                msgBtn.onclick = () => {
+                    window.location.href = `mailto:${inv.email}?subject=Partnership%20Inquiry%20-%20Fund%20My%20Startup`;
+                };
+                actions.appendChild(msgBtn);
+            } else if (!localStorage.getItem('fms_access_token')) {
+                const loginLink = document.createElement('a');
+                loginLink.href = 'login.html';
+                loginLink.className = 'fms-btn fms-btn-secondary';
+                loginLink.textContent = 'Login as Startup to Connect';
+                actions.appendChild(loginLink);
+            }
+        } catch (error) {
+            body.innerHTML = `<p class="fms-modal-error">${error.message || 'Could not load investor profile.'}</p>`;
+        }
+    }
+
     function buildInvestorCard(investor, api) {
         const card = document.createElement('div');
-        card.className = 'card';
-
-        // Use default profile image fallback
-        const imgUrl = 'images/profile.png';
-        const investorType = investor.investor_type || 'Investor';
-
+        card.className = 'fms-startup-card';
         card.innerHTML = `
-            <img src="${imgUrl}" alt="${investor.full_name}" style="object-fit: cover; border-radius: 14px;">
-            <div class="card-content">
-                <h2>${investor.full_name} <span>(${investorType})</span></h2>
-                <p>
-                    ${investor.investor_description || 'No description provided.'}
-                </p>
-                <p style="font-size: 15px; margin-top: 8px; color: #555;">
-                    Domain: <strong>${investor.investor_domain || '-'}</strong> | Range: <strong>Up to ${api.formatINR(investor.max_investment_range || 0)}</strong>
-                </p>
-                <p style="font-size: 14px; color: #777; margin-top: 4px;">
-                    Location: ${investor.district || ''}, ${investor.state || ''}
-                </p>
-            </div>
-        `;
+            <div class="fms-startup-card-inner">
+                <span class="fms-startup-category">${investor.investor_type || 'Investor'}</span>
+                <h3>${investor.full_name}</h3>
+                <p class="fms-startup-founder">${investor.company_name || 'Individual Investor'}</p>
+                <p class="fms-startup-desc">${investor.description_preview || investor.investor_description || 'No description provided.'}</p>
+                <p class="fms-startup-meta">Domain: ${investor.investor_domain || '-'} · Max Range: ${api.formatINR(investor.max_investment_range || 0)}</p>
+                <button type="button" class="fms-btn fms-btn-outline fms-view-details">View Details</button>
+            </div>`;
+        card.querySelector('.fms-view-details').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openInvestorModal(investor.investor_id);
+        });
+        card.addEventListener('click', () => {
+            openInvestorModal(investor.investor_id);
+        });
         return card;
     }
 
@@ -410,6 +510,8 @@
         getCategoryImage,
         openStartupModal,
         closeStartupModal,
+        openInvestorModal,
+        closeInvestorModal,
         showPendingBanner,
         wirePitchDeckUpload,
         buildStartupCard,
@@ -419,3 +521,4 @@
         buildInvestorCard,
     };
 })(window);
+

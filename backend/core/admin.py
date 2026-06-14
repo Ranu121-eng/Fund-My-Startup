@@ -252,9 +252,16 @@ class DocumentAdmin(admin.ModelAdmin):
 
 @admin.register(ContactMessage)
 class ContactMessageAdmin(admin.ModelAdmin):
-    list_display = ('message_id', 'name', 'email', 'created_at')
-    search_fields = ('name', 'email')
+    list_display = ('message_id', 'name', 'email', 'message_preview', 'created_at')
+    search_fields = ('name', 'email', 'message')
     readonly_fields = ('message_id', 'created_at')
+
+    @admin.display(description='Message')
+    def message_preview(self, obj):
+        if obj.message:
+            return obj.message[:100] + '...' if len(obj.message) > 100 else obj.message
+        return ''
+
 
 
 @admin.register(FundingRequest)

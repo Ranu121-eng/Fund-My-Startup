@@ -84,7 +84,7 @@ class Startup(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
-    is_email_verified = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=True)
     two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -117,7 +117,7 @@ class Investor(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
-    is_email_verified = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=True)
     two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

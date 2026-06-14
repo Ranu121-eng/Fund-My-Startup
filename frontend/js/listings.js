@@ -197,23 +197,43 @@
     }
 
     async function initInvestorListingPage(api, components) {
+        components.ensureComponentStyles();
         const container = document.querySelector('section.container');
         if (!container) return;
+
+        const subtitle = container.querySelector('p.subtitle');
+
+        container.querySelectorAll('.card').forEach((c) => c.remove());
+
+        let grid = container.querySelector('.fms-startup-grid');
+        if (!grid) {
+            grid = document.createElement('div');
+            grid.className = 'fms-startup-grid';
+            if (subtitle) {
+                subtitle.parentNode.insertBefore(grid, subtitle.nextSibling);
+            } else {
+                container.appendChild(grid);
+            }
+        } else {
+            grid.innerHTML = '';
+        }
 
         let investors;
         try {
             investors = await api.fundMyStartupRequest('/investors/');
         } catch (e) {
-            console.warn('Unable to load investors:', e.message);
+            grid.innerHTML = `<p class="fms-empty-state">Unable to load investors: ${e.message}</p>`;
             return;
         }
 
-        if (Array.isArray(investors) && investors.length > 0) {
-            container.querySelectorAll('.card').forEach((c) => c.remove());
-            investors.forEach((inv) => {
-                container.appendChild(components.buildInvestorCard(inv, api));
-            });
+        if (!Array.isArray(investors) || investors.length === 0) {
+            grid.innerHTML = `<p class="fms-empty-state">No approved investors found.</p>`;
+            return;
         }
+
+        investors.forEach((inv) => {
+            grid.appendChild(components.buildInvestorCard(inv, api));
+        });
     }
 
     function initListings() {

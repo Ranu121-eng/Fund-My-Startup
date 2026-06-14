@@ -51,6 +51,7 @@ from .serializers import (
     InvestmentOfferSerializer,
     InvestmentSerializer,
     InvestorDetailSerializer,
+    PublicInvestorDetailSerializer,
     InvestorRegistrationSerializer,
     InvestorListSerializer,
     LoginSerializer,
@@ -131,6 +132,7 @@ class StartupRegisterView(APIView):
             district=data['district'],
             category=data['category'],
             profile_status=ProfileStatus.PENDING,
+            is_email_verified=True,
         )
 
         save_user_documents(
@@ -149,61 +151,10 @@ class StartupRegisterView(APIView):
             status=FundingRequestStatus.OPEN,
         )
 
-        # Generate email verification token
-        token = secrets.token_urlsafe(32)
-        EmailVerificationToken.objects.create(
-            email=startup.email,
-            user_type='startup',
-            token=token,
-        )
-
-        # Send Verification Email
-        base_url = request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000'
-        verify_link = f"{base_url}/frontend/verify-email.html?token={token}&email={startup.email}&type=startup"
-
-        subject = "Verify Your Email - Fund My Startup"
-        message = (
-            f"Hello {startup.founder_name},\n\n"
-            f"Thank you for registering on Fund My Startup!\n"
-            f"Please verify your email address by clicking the link below:\n\n"
-            f"{verify_link}\n\n"
-            f"After email verification, your profile will be reviewed by the platform administrator for approval.\n\n"
-            f"Regards,\n"
-            f"Fund My Startup Team"
-        )
-        html_message = (
-            f"<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
-            f"<h2>Verify Your Email Address</h2>"
-            f"<p>Hello {startup.founder_name},</p>"
-            f"<p>Thank you for registering on Fund My Startup!</p>"
-            f"<p>Please click the button below to verify your email address:</p>"
-            f"<div style='margin: 25px 0;'>"
-            f"  <a href='{verify_link}' style='background-color: #f7934c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email</a>"
-            f"</div>"
-            f"<p>Or copy and paste this URL into your browser:</p>"
-            f"<p><a href='{verify_link}'>{verify_link}</a></p>"
-            f"<p>After verifying your email, the platform administrator will review and approve your account profile.</p>"
-            f"<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />"
-            f"<p style='font-size: 12px; color: #777;'>This email was sent automatically by Fund My Startup.</p>"
-            f"</div>"
-        )
-
-        try:
-            send_mail(
-                subject,
-                message,
-                'no-reply@fundmystartup.com',
-                [startup.email],
-                fail_silently=False,
-                html_message=html_message,
-            )
-        except Exception as e:
-            print(f"Failed to send verification email: {e}")
-
         return Response(
             {
                 'success': True,
-                'message': 'Startup registration submitted successfully. Please check your email to verify your account.',
+                'message': 'Startup registration submitted successfully. Your profile will be reviewed by the platform administrator for approval.',
                 'startup_id': startup.startup_id,
                 'profile_status': startup.profile_status,
             },
@@ -236,6 +187,7 @@ class InvestorRegisterView(APIView):
             state=data['state'],
             district=data['district'],
             profile_status=ProfileStatus.PENDING,
+            is_email_verified=True,
         )
 
         save_user_documents(
@@ -248,61 +200,10 @@ class InvestorRegisterView(APIView):
             },
         )
 
-        # Generate email verification token
-        token = secrets.token_urlsafe(32)
-        EmailVerificationToken.objects.create(
-            email=investor.email,
-            user_type='investor',
-            token=token,
-        )
-
-        # Send Verification Email
-        base_url = request.build_absolute_uri('/')[:-1] if request else 'http://127.0.0.1:8000'
-        verify_link = f"{base_url}/frontend/verify-email.html?token={token}&email={investor.email}&type=investor"
-
-        subject = "Verify Your Email - Fund My Startup"
-        message = (
-            f"Hello {investor.full_name},\n\n"
-            f"Thank you for registering on Fund My Startup!\n"
-            f"Please verify your email address by clicking the link below:\n\n"
-            f"{verify_link}\n\n"
-            f"After email verification, your profile will be reviewed by the platform administrator for approval.\n\n"
-            f"Regards,\n"
-            f"Fund My Startup Team"
-        )
-        html_message = (
-            f"<div style='font-family: Arial, sans-serif; padding: 20px; color: #333;'>"
-            f"<h2>Verify Your Email Address</h2>"
-            f"<p>Hello {investor.full_name},</p>"
-            f"<p>Thank you for registering on Fund My Startup!</p>"
-            f"<p>Please click the button below to verify your email address:</p>"
-            f"<div style='margin: 25px 0;'>"
-            f"  <a href='{verify_link}' style='background-color: #f7934c; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;'>Verify Email</a>"
-            f"</div>"
-            f"<p>Or copy and paste this URL into your browser:</p>"
-            f"<p><a href='{verify_link}'>{verify_link}</a></p>"
-            f"<p>After verifying your email, the platform administrator will review and approve your account profile.</p>"
-            f"<hr style='border: none; border-top: 1px solid #eee; margin-top: 30px;' />"
-            f"<p style='font-size: 12px; color: #777;'>This email was sent automatically by Fund My Startup.</p>"
-            f"</div>"
-        )
-
-        try:
-            send_mail(
-                subject,
-                message,
-                'no-reply@fundmystartup.com',
-                [investor.email],
-                fail_silently=False,
-                html_message=html_message,
-            )
-        except Exception as e:
-            print(f"Failed to send verification email: {e}")
-
         return Response(
             {
                 'success': True,
-                'message': 'Investor registration submitted successfully. Please check your email to verify your account.',
+                'message': 'Investor registration submitted successfully. Your profile will be reviewed by the platform administrator for approval.',
                 'investor_id': investor.investor_id,
                 'profile_status': investor.profile_status,
             },
@@ -341,15 +242,7 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        # Enforce email verification for startup and investor accounts
-        if user_type in ('startup', 'investor') and not getattr(account, 'is_email_verified', False):
-            return Response(
-                {
-                    'success': False,
-                    'message': 'Please verify your email address first. Check your inbox for the verification link.',
-                },
-                status=status.HTTP_403_FORBIDDEN,
-            )
+
 
         profile_status = getattr(account, 'profile_status', None)
         if profile_status == ProfileStatus.REJECTED:
@@ -468,6 +361,26 @@ class StartupDetailView(APIView):
         else:
             data = PublicStartupDetailSerializer(startup).data
         return Response({'success': True, 'startup': data})
+
+
+class InvestorDetailView(APIView):
+    """Public detail for an approved investor. Startups receive full contact info."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, investor_id):
+        investor = get_object_or_404(
+            Investor,
+            investor_id=investor_id,
+            profile_status=ProfileStatus.APPROVED,
+        )
+        user = getattr(request, 'user', None)
+        if getattr(user, 'is_authenticated', False) and user.user_type == 'startup':
+            data = InvestorDetailSerializer(investor).data
+        else:
+            data = PublicInvestorDetailSerializer(investor).data
+        return Response({'success': True, 'investor': data})
+
 
 
 class DocumentUploadView(APIView):
@@ -606,6 +519,10 @@ class AdminDashboardView(APIView):
                 ).data,
                 'pending_investors': InvestorDetailSerializer(
                     Investor.objects.filter(profile_status=ProfileStatus.PENDING),
+                    many=True,
+                ).data,
+                'contact_messages': ContactMessageSerializer(
+                    ContactMessage.objects.all().order_by('-created_at'),
                     many=True,
                 ).data,
             }
@@ -1236,6 +1153,21 @@ class Disable2FAView(APIView):
                 'message': 'Two-factor authentication has been successfully disabled.',
             }
         )
+
+
+class ApiRootView(APIView):
+    """API root endpoint returning system status."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return Response({
+            'success': True,
+            'message': 'Welcome to Fund My Startup API!',
+            'version': '1.0.0',
+            'status': 'running'
+        })
+
 
 
 
