@@ -431,3 +431,22 @@ textarea{
         text-align:center;
     }
 }
+
+/* ================= PASSWORD BOX TOGGLE ================= */
+.password-box {
+    position: relative;
+    width: 100%;
+}
+.password-box input {
+    margin-bottom: 0px !important;
+}
+.password-box i {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 20px;
+    cursor: pointer;
+    color: #666;
+    z-index: 10;
+}

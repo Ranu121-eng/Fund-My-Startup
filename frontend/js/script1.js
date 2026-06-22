@@ -131,6 +131,26 @@
             icon.style.transform = 'scale(1)';
         });
     });
+
+    // Password visibility toggle
+    document.querySelectorAll('.password-box i').forEach((toggleIcon) => {
+        toggleIcon.addEventListener('click', () => {
+            const passwordInput = toggleIcon.parentElement.querySelector('input');
+            if (passwordInput) {
+                const isPassword = passwordInput.getAttribute('type') === 'password';
+                passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+                
+                // Toggle classes
+                if (isPassword) {
+                    toggleIcon.classList.remove('fa-eye');
+                    toggleIcon.classList.add('fa-eye-slash');
+                } else {
+                    toggleIcon.classList.remove('fa-eye-slash');
+                    toggleIcon.classList.add('fa-eye');
+                }
+            }
+        });
+    });
 })();
 
 // Load backend API + UI components + listings

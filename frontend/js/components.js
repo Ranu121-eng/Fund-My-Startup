@@ -506,6 +506,155 @@
         return card;
     }
 
+    function initChatbot() {
+        if (document.getElementById('fms-chatbot-trigger')) return;
+
+        ensureComponentStyles();
+
+        // 1. Create Floating Trigger Button
+        const trigger = document.createElement('button');
+        trigger.id = 'fms-chatbot-trigger';
+        trigger.setAttribute('aria-label', 'Open chatbot');
+        trigger.innerHTML = `
+            <svg viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
+            </svg>`;
+        document.body.appendChild(trigger);
+
+        // 2. Create Chat Window
+        const chatWindow = document.createElement('div');
+        chatWindow.id = 'fms-chatbot-window';
+        chatWindow.innerHTML = `
+            <div class="fms-chat-header">
+                <div class="fms-chat-header-info">
+                    <span class="fms-chat-status"></span>
+                    <h3>Fund My Startup Bot</h3>
+                </div>
+                <button type="button" class="fms-chat-close">&times;</button>
+            </div>
+            <div class="fms-chat-messages"></div>
+            <div class="fms-chat-typing">
+                <span></span><span></span><span></span>
+            </div>
+            <div class="fms-chat-quick-replies"></div>
+            <div class="fms-chat-input-area">
+                <input type="text" class="fms-chat-input" placeholder="Type a message..." required>
+                <button type="button" class="fms-chat-send" aria-label="Send message">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>`;
+        document.body.appendChild(chatWindow);
+
+        const closeBtn = chatWindow.querySelector('.fms-chat-close');
+        const messagesArea = chatWindow.querySelector('.fms-chat-messages');
+        const typingIndicator = chatWindow.querySelector('.fms-chat-typing');
+        const inputField = chatWindow.querySelector('.fms-chat-input');
+        const sendBtn = chatWindow.querySelector('.fms-chat-send');
+        const quickRepliesArea = chatWindow.querySelector('.fms-chat-quick-replies');
+
+        trigger.addEventListener('click', () => {
+            chatWindow.classList.toggle('is-open');
+            if (chatWindow.classList.contains('is-open')) {
+                inputField.focus();
+                if (messagesArea.children.length === 0) {
+                    sendBotMessage("Hi! I am the Fund My Startup Assistant. How can I help you today?");
+                    renderQuickReplies();
+                }
+            }
+        });
+
+        closeBtn.addEventListener('click', () => {
+            chatWindow.classList.remove('is-open');
+        });
+
+        const QUICK_REPLIES = [
+            { text: "How to register?", handler: () => handleUserQuestion("How do I register an account?") },
+            { text: "How to invest?", handler: () => handleUserQuestion("How can I make an investment offer?") },
+            { text: "Approval process?", handler: () => handleUserQuestion("What is the profile verification/approval process?") },
+            { text: "Contact Support", handler: () => handleUserQuestion("How do I contact support?") }
+        ];
+
+        function renderQuickReplies() {
+            quickRepliesArea.innerHTML = '';
+            QUICK_REPLIES.forEach(q => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'fms-chat-quick-btn';
+                btn.textContent = q.text;
+                btn.addEventListener('click', q.handler);
+                quickRepliesArea.appendChild(btn);
+            });
+        }
+
+        function appendMessage(text, sender) {
+            const msg = document.createElement('div');
+            msg.className = `fms-chat-msg ${sender}`;
+            msg.textContent = text;
+            messagesArea.appendChild(msg);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function sendBotMessage(text) {
+            appendMessage(text, 'bot');
+        }
+
+        function showTyping(show) {
+            typingIndicator.style.display = show ? 'flex' : 'none';
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        function handleUserQuestion(text) {
+            appendMessage(text, 'user');
+            showTyping(true);
+
+            setTimeout(() => {
+                showTyping(false);
+                const reply = getBotReply(text);
+                sendBotMessage(reply);
+            }, 1000);
+        }
+
+        function getBotReply(query) {
+            const q = query.toLowerCase();
+            if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
+                return "Hello! Hope you are having a wonderful day. Ask me anything about registering, investing, or finding support on the Fund My Startup platform!";
+            }
+            if (q.includes('register') || q.includes('signup') || q.includes('create') || q.includes('account')) {
+                return "To register: click 'Login/Register' in the top-right corner. You can register as a 'Startup' (requires Aadhaar, PAN card, and Pitch Deck uploads) or an 'Investor' (requires Aadhaar and PAN card). Once registered, your account status will show 'Pending' until approved by our administrator.";
+            }
+            if (q.includes('invest') || q.includes('offer') || q.includes('deal') || q.includes('money')) {
+                return "Approved investors can view the list of startups, check their financial stats/descriptions, and make investment offers directly from their dashboard. Startups can then review and accept or reject offers in their own dashboard.";
+            }
+            if (q.includes('approve') || q.includes('pending') || q.includes('verification') || q.includes('verify')) {
+                return "After registering, the Platform Administrator verifies your uploaded documents (Aadhaar Card, PAN Card, and Pitch Deck). Once verified, the Admin approves your profile. Startups are then displayed publicly, and investors can start making offers!";
+            }
+            if (q.includes('contact') || q.includes('support') || q.includes('help') || q.includes('email') || q.includes('message')) {
+                return "You can get in touch with us by clicking the 'Contact us' page in the navbar and submitting the contact form, or by writing directly to our support team at support@fundmystartup.com.";
+            }
+            if (q.includes('startup') || q.includes('company')) {
+                return "Our platform features startups across categories like Health Tech, EdTech, FinTech, AI & ML, E-Commerce, and Food Tech. Startups gain visibility, upload pitch decks, and receive real investment offers from venture capitals and individual investors.";
+            }
+            return "I'm sorry, I'm not sure about that. Try asking about 'how to register', 'how to invest', 'admin approval', or click one of the quick replies below.";
+        }
+
+        function triggerSend() {
+            const text = inputField.value.trim();
+            if (!text) return;
+            inputField.value = '';
+            handleUserQuestion(text);
+        }
+
+        sendBtn.addEventListener('click', triggerSend);
+        inputField.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                triggerSend();
+            }
+        });
+    }
+
     global.FundMyStartupComponents = {
         getCategoryImage,
         openStartupModal,
@@ -520,5 +669,8 @@
         wireTwoFactorAuth,
         buildInvestorCard,
     };
+
+    // Auto-run chatbot on script load
+    initChatbot();
 })(window);
 
