@@ -30,6 +30,8 @@ urlpatterns = [
     path('startups/<int:startup_id>/', views.StartupDetailView.as_view(), name='api-startup-detail'),
     path('investors/<int:investor_id>/', views.InvestorDetailView.as_view(), name='api-investor-detail'),
     path('documents/upload/', views.DocumentUploadView.as_view(), name='api-document-upload'),
+    path('profile/', views.ProfileView.as_view(), name='api-profile'),
+    path('profile/change-password/', views.ChangePasswordView.as_view(), name='api-profile-change-password'),
 
     # Dashboards
     path('dashboard/startup/', views.StartupDashboardView.as_view(), name='api-startup-dashboard'),

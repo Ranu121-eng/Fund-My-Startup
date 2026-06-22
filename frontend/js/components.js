@@ -646,13 +646,369 @@
             handleUserQuestion(text);
         }
 
-        sendBtn.addEventListener('click', triggerSend);
-        inputField.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                triggerSend();
+    }
+
+    async function openProfileModal() {
+        ensureComponentStyles();
+        const api = global.FundMyStartupAPI;
+        if (!api) {
+            alert('Application is still loading. Please try again.');
+            return;
+        }
+
+        let overlay = document.getElementById('fms-profile-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'fms-profile-overlay';
+            overlay.className = 'fms-profile-modal-overlay';
+            overlay.innerHTML = `
+                <div class="fms-profile-modal" role="dialog" aria-modal="true" aria-labelledby="fms-profile-title">
+                    <button type="button" class="fms-profile-modal-close" aria-label="Close">&times;</button>
+                    <h2 id="fms-profile-title" style="margin-bottom: 20px;">Edit Profile Dashboard</h2>
+                    
+                    <div class="fms-profile-tabs">
+                        <button type="button" class="fms-profile-tab-btn active" data-tab="info">Personal & Business Info</button>
+                        <button type="button" class="fms-profile-tab-btn" data-tab="files">Photo & Documents</button>
+                        <button type="button" class="fms-profile-tab-btn" data-tab="security">Security</button>
+                    </div>
+
+                    <div class="fms-profile-body">
+                        <p class="fms-modal-loading">Loading profile...</p>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay || e.target.classList.contains('fms-profile-modal-close')) {
+                    overlay.classList.remove('is-open');
+                    document.body.style.overflow = '';
+                }
+            });
+        }
+
+        const body = overlay.querySelector('.fms-profile-body');
+        body.innerHTML = '<p class="fms-modal-loading">Loading profile details...</p>';
+        overlay.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+
+        try {
+            const res = await api.fundMyStartupRequest('/profile/');
+            const userType = res.user_type;
+            const profile = res.profile;
+            const documents = res.documents || [];
+
+            let categories = [];
+            if (userType === 'startup') {
+                try {
+                    categories = await api.fundMyStartupRequest('/categories/');
+                } catch (e) {
+                    console.error('Failed to load categories', e);
+                }
             }
+
+            renderProfileContent(body, userType, profile, documents, categories);
+            wireTabSwitching(overlay);
+            wireProfileForms(overlay, api, userType);
+
+        } catch (error) {
+            body.innerHTML = `<p class="fms-modal-error">Error: ${error.message}</p>`;
+        }
+    }
+
+    function renderProfileContent(body, userType, profile, documents, categories) {
+        const photoUrl = profile.profile_photo_url || 'images/profile.png';
+        
+        let infoFieldsHtml = '';
+        if (userType === 'startup') {
+            const catOptions = categories.map(c => 
+                `<option value="${c.category_id}" ${profile.category_id === c.category_id ? 'selected' : ''}>${c.category_name}</option>`
+            ).join('');
+
+            infoFieldsHtml = `
+                <div class="fms-profile-grid">
+                    <div class="fms-profile-form-group">
+                        <label>Founder Full Name</label>
+                        <input type="text" name="founder_name" value="${profile.founder_name || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" value="${profile.email || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Contact Number</label>
+                        <input type="text" name="phone" value="${profile.phone || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Company Name</label>
+                        <input type="text" name="company_name" value="${profile.company_name || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Website URL</label>
+                        <input type="url" name="website_url" value="${profile.website_url || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Category</label>
+                        <select name="category_id">
+                            <option value="">Select Category</option>
+                            ${catOptions}
+                        </select>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Funding Required (INR)</label>
+                        <input type="number" name="funding_required" value="${profile.funding_required || ''}" step="0.01">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Country</label>
+                        <input type="text" name="country" value="${profile.country || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>State</label>
+                        <input type="text" name="state" value="${profile.state || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>District</label>
+                        <input type="text" name="district" value="${profile.district || ''}">
+                    </div>
+                    <div class="fms-profile-form-group fms-profile-fullwidth">
+                        <label>Company Description</label>
+                        <textarea name="startup_description" rows="3">${profile.startup_description || ''}</textarea>
+                    </div>
+                </div>`;
+        } else {
+            infoFieldsHtml = `
+                <div class="fms-profile-grid">
+                    <div class="fms-profile-form-group">
+                        <label>Full Name</label>
+                        <input type="text" name="full_name" value="${profile.full_name || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Email Address</label>
+                        <input type="email" name="email" value="${profile.email || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Contact Number</label>
+                        <input type="text" name="phone" value="${profile.phone || ''}" required>
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Company Name</label>
+                        <input type="text" name="company_name" value="${profile.company_name || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Investor Type</label>
+                        <input type="text" name="investor_type" value="${profile.investor_type || ''}" placeholder="e.g. Venture Capital, Angel Investor">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Investor Domain</label>
+                        <input type="text" name="investor_domain" value="${profile.investor_domain || ''}" placeholder="e.g. Health Tech, SaaS">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Max Investment Range (INR)</label>
+                        <input type="number" name="max_investment_range" value="${profile.max_investment_range || ''}" step="0.01">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Country</label>
+                        <input type="text" name="country" value="${profile.country || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>State</label>
+                        <input type="text" name="state" value="${profile.state || ''}">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>District</label>
+                        <input type="text" name="district" value="${profile.district || ''}">
+                    </div>
+                    <div class="fms-profile-form-group fms-profile-fullwidth">
+                        <label>Bio / Investor Description</label>
+                        <textarea name="investor_description" rows="3">${profile.investor_description || ''}</textarea>
+                    </div>
+                </div>`;
+        }
+
+        const getDocRow = (docType, label) => {
+            const doc = documents.filter(d => d.document_type === docType).sort((a, b) => b.document_id - a.document_id)[0];
+            const badgeClass = doc ? doc.status : 'pending';
+            const statusLabel = doc ? doc.status : 'Not Uploaded';
+            return `
+                <div class="fms-profile-doc-row">
+                    <div class="fms-profile-doc-info">
+                        <h5>${label}</h5>
+                        <span>${doc ? `Uploaded on ${new Date(doc.uploaded_at).toLocaleDateString()}` : 'Awaiting upload'}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        ${doc ? `<a href="${doc.file_url}" target="_blank" style="font-size: 13px; color: #f7934c; font-weight: 600; text-decoration: none;">View File</a>` : ''}
+                        <span class="fms-profile-doc-badge ${badgeClass}">${statusLabel}</span>
+                    </div>
+                </div>
+                <div class="fms-profile-form-group" style="margin-bottom: 20px;">
+                    <input type="file" class="fms-profile-doc-input" data-doc-type="${docType}">
+                </div>`;
+        };
+
+        const docsHtml = userType === 'startup' 
+            ? getDocRow('aadhaar', 'Aadhaar Card') + getDocRow('pan', 'PAN Card') + getDocRow('pitch_deck', 'Pitch Deck')
+            : getDocRow('aadhaar', 'Aadhaar Card') + getDocRow('pan', 'PAN Card');
+
+        body.innerHTML = `
+            <div class="fms-profile-tab-content active" id="fms-profile-tab-info">
+                <form id="fms-profile-info-form">
+                    <div class="fms-profile-photo-section">
+                        <img src="${photoUrl}" alt="Profile Photo" class="fms-profile-photo-preview" id="fms-profile-photo-preview-img">
+                        <div class="fms-profile-photo-actions">
+                            <label style="font-size: 13px; font-weight: 600; color: #475569;">Profile Photo</label>
+                            <input type="file" id="fms-profile-photo-input" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    ${infoFieldsHtml}
+                    
+                    <button type="submit" class="fms-profile-save-btn">Update Profile Information</button>
+                </form>
+            </div>
+
+            <div class="fms-profile-tab-content" id="fms-profile-tab-files">
+                <div style="margin-bottom: 20px;">
+                    <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">Update your documents below. Files must be PDFs or Images under 5MB. Newly uploaded files will show as Pending until reviewed by the Administrator.</p>
+                    ${docsHtml}
+                </div>
+            </div>
+
+            <div class="fms-profile-tab-content" id="fms-profile-tab-security">
+                <form id="fms-profile-security-form">
+                    <div class="fms-profile-form-group">
+                        <label>Current Password</label>
+                        <input type="password" name="old_password" required placeholder="Enter current password">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>New Password</label>
+                        <input type="password" name="new_password" required placeholder="Min 6 characters">
+                    </div>
+                    <div class="fms-profile-form-group">
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirm_password" required placeholder="Re-enter new password">
+                    </div>
+                    <button type="submit" class="fms-profile-save-btn">Change Password</button>
+                </form>
+            </div>`;
+    }
+
+    function wireTabSwitching(overlay) {
+        const tabBtns = overlay.querySelectorAll('.fms-profile-tab-btn');
+        const tabContents = overlay.querySelectorAll('.fms-profile-tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                overlay.querySelector(`#fms-profile-tab-${target}`).classList.add('active');
+            });
         });
+    }
+
+    function wireProfileForms(overlay, api, userType) {
+        const infoForm = overlay.querySelector('#fms-profile-info-form');
+        if (infoForm) {
+            infoForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(infoForm);
+                const photoInput = overlay.querySelector('#fms-profile-photo-input');
+                if (photoInput && photoInput.files && photoInput.files[0]) {
+                    formData.append('profile_photo', photoInput.files[0]);
+                }
+
+                const submitBtn = infoForm.querySelector('.fms-profile-save-btn');
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Updating...';
+
+                    const result = await api.fundMyStartupRequest('/profile/', {
+                        method: 'PATCH',
+                        body: formData
+                    });
+
+                    alert('Profile updated successfully!');
+                    if (result.profile && result.profile.profile_photo_url) {
+                        overlay.querySelector('#fms-profile-photo-preview-img').src = result.profile.profile_photo_url;
+                    }
+                    location.reload();
+                } catch (error) {
+                    alert(error.message || 'Failed to update profile.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Update Profile Information';
+                }
+            });
+        }
+
+        const docInputs = overlay.querySelectorAll('.fms-profile-doc-input');
+        docInputs.forEach(input => {
+            input.addEventListener('change', async () => {
+                if (!input.files || !input.files[0]) return;
+                
+                const docType = input.dataset.docType;
+                const formData = new FormData();
+                formData.append('document_type', docType);
+                formData.append('file', input.files[0]);
+
+                try {
+                    input.disabled = true;
+                    const result = await api.fundMyStartupRequest('/documents/upload/', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    alert(result.message || 'Document uploaded successfully!');
+                    openProfileModal();
+                } catch (error) {
+                    alert(error.message || 'Document upload failed.');
+                } finally {
+                    input.disabled = false;
+                    input.value = '';
+                }
+            });
+        });
+
+        const securityForm = overlay.querySelector('#fms-profile-security-form');
+        if (securityForm) {
+            securityForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const oldPassword = securityForm.querySelector('[name="old_password"]').value;
+                const newPassword = securityForm.querySelector('[name="new_password"]').value;
+                const confirmPassword = securityForm.querySelector('[name="confirm_password"]').value;
+
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match.');
+                    return;
+                }
+
+                const submitBtn = securityForm.querySelector('.fms-profile-save-btn');
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Changing...';
+
+                    await api.fundMyStartupRequest('/profile/change-password/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            old_password: oldPassword,
+                            new_password: newPassword
+                        })
+                    });
+
+                    alert('Password changed successfully!');
+                    securityForm.reset();
+                } catch (error) {
+                    alert(error.message || 'Password change failed.');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Change Password';
+                }
+            });
+        }
     }
 
     global.FundMyStartupComponents = {
@@ -668,6 +1024,7 @@
         ensureComponentStyles,
         wireTwoFactorAuth,
         buildInvestorCard,
+        openProfileModal,
     };
 
     // Auto-run chatbot on script load

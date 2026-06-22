@@ -35,6 +35,10 @@
 
         components.ensureComponentStyles();
         document.querySelector('.logout-btn')?.addEventListener('click', () => api.logoutUser());
+        document.getElementById('fms-profile-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            components.openProfileModal();
+        });
 
         try {
             const data = await api.fundMyStartupRequest('/dashboard/investor/');

@@ -36,6 +36,10 @@
         components.ensureComponentStyles();
 
         document.querySelector('.logout-btn')?.addEventListener('click', () => api.logoutUser());
+        document.getElementById('fms-profile-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            components.openProfileModal();
+        });
         components.wirePitchDeckUpload('.hero-left button', api);
 
         try {

@@ -1155,6 +1155,115 @@ class Disable2FAView(APIView):
         )
 
 
+class ProfileView(APIView):
+    """Retrieve or update profile details for the authenticated startup or investor."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .serializers import StartupProfileSerializer, InvestorProfileSerializer, DocumentSerializer
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+
+        if user_type == 'startup':
+            startup = Startup.objects.select_related('category').get(startup_id=user_id)
+            serializer = StartupProfileSerializer(startup, context={'request': request})
+            docs = Document.objects.filter(user_type='startup', user_id=user_id)
+            doc_data = DocumentSerializer(docs, many=True, context={'request': request}).data
+            return Response({
+                'success': True,
+                'user_type': 'startup',
+                'profile': serializer.data,
+                'documents': doc_data
+            })
+        elif user_type == 'investor':
+            investor = Investor.objects.get(investor_id=user_id)
+            serializer = InvestorProfileSerializer(investor, context={'request': request})
+            docs = Document.objects.filter(user_type='investor', user_id=user_id)
+            doc_data = DocumentSerializer(docs, many=True, context={'request': request}).data
+            return Response({
+                'success': True,
+                'user_type': 'investor',
+                'profile': serializer.data,
+                'documents': doc_data
+            })
+        else:
+            return Response({'success': False, 'message': 'Invalid user type.'}, status=400)
+
+    def patch(self, request):
+        from .serializers import StartupProfileSerializer, InvestorProfileSerializer
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+
+        if user_type == 'startup':
+            startup = Startup.objects.get(startup_id=user_id)
+            serializer = StartupProfileSerializer(startup, data=request.data, partial=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            
+            # Handle category name update if provided
+            category_id = request.data.get('category_id')
+            category_name = request.data.get('category_name')
+            if category_name and not category_id:
+                category, _ = StartupCategory.objects.get_or_create(category_name=category_name.strip())
+                startup.category = category
+            elif category_id:
+                category = StartupCategory.objects.filter(category_id=category_id).first()
+                if category:
+                    startup.category = category
+
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Profile updated successfully.',
+                'profile': serializer.data
+            })
+        elif user_type == 'investor':
+            investor = Investor.objects.get(investor_id=user_id)
+            serializer = InvestorProfileSerializer(investor, data=request.data, partial=True, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Profile updated successfully.',
+                'profile': serializer.data
+            })
+        else:
+            return Response({'success': False, 'message': 'Invalid user type.'}, status=400)
+
+
+class ChangePasswordView(APIView):
+    """Allow logged-in startup/investor/admin to change their password."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        if not old_password or not new_password:
+            return Response({'success': False, 'message': 'Both old_password and new_password are required.'}, status=400)
+
+        if len(new_password) < 6:
+            return Response({'success': False, 'message': 'New password must be at least 6 characters long.'}, status=400)
+
+        user_type = request.user.user_type
+        user_id = request.user.user_id
+
+        account = None
+        if user_type == 'startup':
+            account = Startup.objects.filter(startup_id=user_id).first()
+        elif user_type == 'investor':
+            account = Investor.objects.filter(investor_id=user_id).first()
+        elif user_type == 'admin':
+            account = PlatformAdmin.objects.filter(admin_id=user_id).first()
+
+        if not account or not verify_password(old_password, account.password):
+            return Response({'success': False, 'message': 'Incorrect old password.'}, status=400)
+
+        account.password = hash_password(new_password)
+        account.save(update_fields=['password'])
+
+        return Response({'success': True, 'message': 'Password changed successfully.'})
+
+
 class ApiRootView(APIView):
     """API root endpoint returning system status."""
 
@@ -1167,6 +1276,7 @@ class ApiRootView(APIView):
             'version': '1.0.0',
             'status': 'running'
         })
+
 
 
 

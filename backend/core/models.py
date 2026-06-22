@@ -84,6 +84,7 @@ class Startup(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
+    profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     is_email_verified = models.BooleanField(default=True)
     two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)
@@ -117,6 +118,7 @@ class Investor(models.Model):
         choices=ProfileStatus.choices,
         default=ProfileStatus.PENDING,
     )
+    profile_photo = models.FileField(upload_to='profile_photos/', blank=True, null=True)
     is_email_verified = models.BooleanField(default=True)
     two_factor_secret = models.CharField(max_length=32, blank=True, null=True)
     is_two_factor_enabled = models.BooleanField(default=False)

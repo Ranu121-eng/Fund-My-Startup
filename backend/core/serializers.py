@@ -419,3 +419,103 @@ class InvestorListSerializer(serializers.ModelSerializer):
         return desc
 
 
+class StartupProfileSerializer(serializers.ModelSerializer):
+    category_name = serializers.CharField(source='category.category_name', read_only=True)
+    category_id = serializers.IntegerField(required=False, allow_null=True)
+    profile_photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Startup
+        fields = [
+            'startup_id',
+            'founder_name',
+            'email',
+            'phone',
+            'company_name',
+            'website_url',
+            'startup_description',
+            'funding_required',
+            'country',
+            'state',
+            'district',
+            'category_id',
+            'category_name',
+            'profile_photo',
+            'profile_photo_url',
+            'profile_status',
+            'created_at',
+        ]
+        read_only_fields = ['startup_id', 'profile_status', 'created_at']
+
+    def get_profile_photo_url(self, obj):
+        request = self.context.get('request')
+        if obj.profile_photo and request:
+            return request.build_absolute_uri(obj.profile_photo.url)
+        if obj.profile_photo:
+            return obj.profile_photo.url
+        return None
+
+    def validate_email(self, value):
+        user = self.context.get('request').user
+        email = value.lower()
+        if Startup.objects.filter(email__iexact=email).exclude(startup_id=user.user_id).exists():
+            raise serializers.ValidationError('Email is already in use.')
+        if Investor.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError('Email is already in use.')
+        return email
+
+    def validate_phone(self, value):
+        if not validate_phone(value):
+            raise serializers.ValidationError('Contact number must contain 10 digits.')
+        return value
+
+
+class InvestorProfileSerializer(serializers.ModelSerializer):
+    profile_photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Investor
+        fields = [
+            'investor_id',
+            'full_name',
+            'email',
+            'phone',
+            'investor_type',
+            'investor_domain',
+            'company_name',
+            'investor_description',
+            'max_investment_range',
+            'country',
+            'state',
+            'district',
+            'profile_photo',
+            'profile_photo_url',
+            'profile_status',
+            'created_at',
+        ]
+        read_only_fields = ['investor_id', 'profile_status', 'created_at']
+
+    def get_profile_photo_url(self, obj):
+        request = self.context.get('request')
+        if obj.profile_photo and request:
+            return request.build_absolute_uri(obj.profile_photo.url)
+        if obj.profile_photo:
+            return obj.profile_photo.url
+        return None
+
+    def validate_email(self, value):
+        user = self.context.get('request').user
+        email = value.lower()
+        if Investor.objects.filter(email__iexact=email).exclude(investor_id=user.user_id).exists():
+            raise serializers.ValidationError('Email is already in use.')
+        if Startup.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError('Email is already in use.')
+        return email
+
+    def validate_phone(self, value):
+        if not validate_phone(value):
+            raise serializers.ValidationError('Contact number must contain 10 digits.')
+        return value
+
+
+
